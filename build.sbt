@@ -22,8 +22,8 @@ classpathTypes += "maven-plugin"
 
 libraryDependencies in ThisBuild ++= Seq(
   "org.scalanlp" %% "breeze" % "0.11.2",
-  "org.scalanlp" %% "breeze-natives" % "0.11.2",
-  "com.github.tototoshi" %% "scala-csv" % "1.2.1")
+  "com.github.tototoshi" %% "scala-csv" % "1.2.1",
+  "org.apache.logging.log4j" % "log4j-core" % "2.2")
 
 resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
 
