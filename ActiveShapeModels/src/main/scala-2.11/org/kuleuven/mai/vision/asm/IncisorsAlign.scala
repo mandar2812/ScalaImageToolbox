@@ -1,7 +1,7 @@
 package org.kuleuven.mai.vision.asm
 
 import java.io.File
-import breeze.linalg.{sum, DenseVector}
+import breeze.linalg.{norm, sum, DenseVector}
 import com.github.tototoshi.csv.CSVReader
 
 /**
@@ -44,6 +44,13 @@ object IncisorsAlign {
         DenseVector.vertcat(x,y)
       })
     })
-    println("Centered Landmarks: "+centeredLandmarks)
+
+    val scaledLandmarks = centeredLandmarks.map{image =>
+      image.map{vector =>
+        vector :/= norm(vector, 2)
+      }
+    }
+
+    println("Scaled Landmarks: "+scaledLandmarks)
   }
 }
