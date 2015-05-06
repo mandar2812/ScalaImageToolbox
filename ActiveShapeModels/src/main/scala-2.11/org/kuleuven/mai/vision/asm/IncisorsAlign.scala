@@ -33,24 +33,19 @@ object IncisorsAlign {
     println("Centering the data points: ")
 
     val centeredLandmarks = landmarks.map((image) => {
-      image.map((vector) => {
-        val num: Int = vector.length/2
-        val x = vector(0 to num - 1)
-        val y = vector(num to vector.length - 1)
-        val xmean = sum(x)/num
-        val ymean = sum(y)/num
-        x :-= xmean
-        y :-= ymean
-        DenseVector.vertcat(x,y)
-      })
+      image.map((vector) => ActiveShapeModel.centerLandmarks(vector))
     })
 
     val scaledLandmarks = centeredLandmarks.map{image =>
-      image.map{vector =>
-        vector :/= norm(vector, 2)
-      }
+      image.map{vector => ActiveShapeModel.scaleLandmarks(vector)}
     }
 
-    println("Scaled Landmarks: "+scaledLandmarks)
+    val landmarksByTooth = List.tabulate(8){tooth =>
+      scaledLandmarks.map{_(tooth)}
+    }
+
+    println("Scaled Landmarks: "+landmarksByTooth)
+    println("Number of teeth: "+landmarksByTooth.length)
+    println("Number of points for each tooth: "+landmarksByTooth(0).length)
   }
 }
