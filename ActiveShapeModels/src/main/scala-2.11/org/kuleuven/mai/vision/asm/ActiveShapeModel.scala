@@ -30,6 +30,13 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
       this.data(i-1) = rotation * vec
     })
   }
+
+  def meanShape: DenseVector[Double] = {
+    val mean = DenseVector.zeros[Double](this.data.head.length)
+    this.data.foreach(vec => mean :+= vec)
+    mean :/= this.data.length.toDouble
+    mean
+  }
 }
 
 object ActiveShapeModel {

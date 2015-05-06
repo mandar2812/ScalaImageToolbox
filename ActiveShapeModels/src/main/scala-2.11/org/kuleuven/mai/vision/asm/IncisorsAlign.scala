@@ -46,6 +46,7 @@ object IncisorsAlign {
     println("After alignment with the first")
     models.head.align()
     println(models.head.getNormalizedShapes(1))
+    println("Mean Shape: "+models.head.meanShape)
 
   }
 }
