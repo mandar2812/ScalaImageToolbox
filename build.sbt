@@ -33,3 +33,5 @@ resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
 
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
+javaOptions += "-Dplatform.dependencies=true"
+
