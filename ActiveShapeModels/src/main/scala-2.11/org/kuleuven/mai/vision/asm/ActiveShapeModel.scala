@@ -5,8 +5,22 @@ import breeze.linalg.{norm, sum, DenseVector}
 /**
  * @author mandar2812
  */
-class ActiveShapeModel {
-  
+class ActiveShapeModel(shapes: List[DenseVector[Double]]){
+
+  def center: Unit = {
+    this.shapes.map(v => ActiveShapeModel.centerLandmarks(v))
+  }
+
+  def scale: Unit = {
+    this.shapes.map(v => ActiveShapeModel.scaleLandmarks(v))
+  }
+
+  def prettyPrint: Unit = {
+    println("*** :Model shapes: ***")
+    shapes.foreach{i => println(i)}
+  }
+
+  def getshapes: List[DenseVector[Double]] = this.shapes
 }
 
 object ActiveShapeModel {
