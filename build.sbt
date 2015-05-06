@@ -25,6 +25,10 @@ libraryDependencies in ThisBuild ++= Seq(
   "com.github.tototoshi" %% "scala-csv" % "1.2.1",
   "org.apache.logging.log4j" % "log4j-core" % "2.2")
 
+classpathTypes += "maven-plugin"
+
+libraryDependencies += "org.bytedeco" % "javacv" % "0.11"
+
 resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
 
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
