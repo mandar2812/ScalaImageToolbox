@@ -35,14 +35,13 @@ object IncisorsAlign {
     }
 
     val models = landmarksByTooth.map(i => new ActiveShapeModel(i))
-    models.foreach{m => {
-      m.center
-      m.scale
-    }}
 
     println("Number of teeth: "+models.length)
-    println("Number of points for each tooth: "+models.head.getshapes.length)
-    println("Sample of one tooth: ")
-    models.head.prettyPrint
+    println("Number of points for each tooth: "+models.head.getNormalizedShapes.length)
+
+
+    println(models.head.getRawShapes)
+    println(models.head.getNormalizedShapes)
+
   }
 }
