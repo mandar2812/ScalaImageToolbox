@@ -1,14 +1,16 @@
 package org.kuleuven.mai.vision.asm
 
-import breeze.linalg.{norm, sum, DenseVector}
+import breeze.linalg._
+
+import scala.collection.mutable
 
 /**
  * @author mandar2812
  */
 class ActiveShapeModel(shapes: List[DenseVector[Double]]){
-  private val data: List[DenseVector[Double]] =
-    shapes.map(v => ActiveShapeModel.centerLandmarks(v))
-      .map(v => ActiveShapeModel.scaleLandmarks(v))
+  private val data: mutable.MutableList[DenseVector[Double]] =
+    mutable.MutableList(shapes.map(v => ActiveShapeModel.centerLandmarks(v))
+      .map(v => ActiveShapeModel.scaleLandmarks(v)):_*)
 
   def prettyPrint: Unit = {
     println("*** :Model shapes: ***")
@@ -16,7 +18,18 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
   }
 
   def getRawShapes: List[DenseVector[Double]] = shapes
-  def getNormalizedShapes: List[DenseVector[Double]] = this.data
+
+  def getNormalizedShapes: mutable.MutableList[DenseVector[Double]] = this.data
+
+  def align(v: DenseVector[Double] = this.data.head): Unit = {
+    val calculateRotation = ActiveShapeModel.alignShapes(v) _
+
+    (1 to this.data.length).foreach(i => {
+      val vec = this.data(i-1)
+      val rotation = calculateRotation(vec)
+      this.data(i-1) = rotation * vec
+    })
+  }
 }
 
 object ActiveShapeModel {
@@ -41,6 +54,33 @@ object ActiveShapeModel {
 
   def scale(list: List[DenseVector[Double]]): List[DenseVector[Double]] = {
     list.map(v => ActiveShapeModel.scaleLandmarks(v))
+  }
+
+  def alignShapes(shape1: DenseVector[Double])(shape2: DenseVector[Double])
+  : DenseMatrix[Double] = {
+    val num: Int = shape1.length/2
+    var numer: Double = 0.0
+    var denom: Double = 0.0
+    val x1 = shape1(0 to num - 1)
+    val y1 = shape1(num to shape1.length - 1)
+    val x2 = shape2(0 to num - 1)
+    val y2 = shape2(num to shape2.length - 1)
+
+    (0 to num - 1).foreach{i =>
+      numer += (x2(i)*y1(i) - x1(i)*y2(i))
+      denom += (y2(i)*y1(i) + x1(i)*x2(i))
+    }
+    val theta = math.atan2(numer,denom)
+
+    val Block1 = diag(DenseVector.fill(num)(math.cos(theta)))
+    val Block2 = diag(DenseVector.fill(num)(-1*math.sin(theta)))
+    val Block3 = diag(DenseVector.fill(num)(math.sin(theta)))
+    val Block4 = diag(DenseVector.fill(num)(math.cos(theta)))
+
+    DenseMatrix.horzcat(
+      DenseMatrix.vertcat(Block1, Block3),
+      DenseMatrix.vertcat(Block2, Block4)
+    )
   }
 
 }

@@ -37,11 +37,15 @@ object IncisorsAlign {
     val models = landmarksByTooth.map(i => new ActiveShapeModel(i))
 
     println("Number of teeth: "+models.length)
-    println("Number of points for each tooth: "+models.head.getNormalizedShapes.length)
+    println("Number of points for each tooth: "+
+      models.head.getNormalizedShapes.length)
 
 
-    println(models.head.getRawShapes)
-    println(models.head.getNormalizedShapes)
+    println(models.head.getRawShapes(1))
+    println(models.head.getNormalizedShapes(1))
+    println("After alignment with the first")
+    models.head.align()
+    println(models.head.getNormalizedShapes(1))
 
   }
 }
