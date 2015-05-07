@@ -64,11 +64,13 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier platform
 )*/
 
-libraryDependencies += "com.sksamuel.scrimage" %% "scrimage-core" % "1.4.2"
+libraryDependencies in ThisBuild += "xerces" % "xercesImpl" % "2.8.1"
 
-libraryDependencies += "com.sksamuel.scrimage" %% "scrimage-canvas" % "1.4.2"
+libraryDependencies in ThisBuild += "com.sksamuel.scrimage" %% "scrimage-core" % "1.4.2"
 
-libraryDependencies += "com.sksamuel.scrimage" %% "scrimage-filters" % "1.4.2"
+libraryDependencies in ThisBuild += "com.sksamuel.scrimage" %% "scrimage-canvas" % "1.4.2"
+
+libraryDependencies in ThisBuild += "com.sksamuel.scrimage" %% "scrimage-filters" % "1.4.2"
 
 resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
 
