@@ -27,8 +27,11 @@ object SmoothImages {
         pix
       }
     }
+
     val obj = new RadioGraph(im)
-    println(obj.kernel(2))
+    // example: the kernel is at the top left corner ( so all values are =-789517) the first value of last column is deleted , and the last value is no the shifted value(2000,800 to see the change
+    // but it doesnt make sense to shift that way. otherwize we wont see any chage in the data ...
+    println(obj.kernelactualize(obj.kernel(0,2),2000,800))
   }
 
 }
