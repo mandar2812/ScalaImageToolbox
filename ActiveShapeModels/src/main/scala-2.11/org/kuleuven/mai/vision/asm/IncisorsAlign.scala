@@ -44,9 +44,9 @@ object IncisorsAlign {
     println(models.head.getRawShapes(1))
     println(models.head.getNormalizedShapes(1))
     println("After alignment with the first")
-    models.head.align()
+    val meanshape = models.head.alignShapes
     println(models.head.getNormalizedShapes(1))
-    println("Mean Shape: "+models.head.meanShape)
+    println("Mean Shape: "+meanshape)
 
   }
 }

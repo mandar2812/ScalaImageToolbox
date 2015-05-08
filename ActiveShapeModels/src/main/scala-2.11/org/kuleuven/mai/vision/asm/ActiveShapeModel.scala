@@ -2,15 +2,25 @@ package org.kuleuven.mai.vision.asm
 
 import breeze.linalg._
 
-import scala.collection.mutable
+import scala.collection.mutable.{MutableList => ML}
 
 /**
  * @author mandar2812
  */
 class ActiveShapeModel(shapes: List[DenseVector[Double]]){
-  private val data: mutable.MutableList[DenseVector[Double]] =
-    mutable.MutableList(shapes.map(v => ActiveShapeModel.centerLandmarks(v))
+
+  private var EPSILON: Double = 0.001
+
+  private val data: ML[DenseVector[Double]] =
+    ML(shapes.map(v => ActiveShapeModel.centerLandmarks(v))
       .map(v => ActiveShapeModel.scaleLandmarks(v)):_*)
+
+  def setTolerance(e: Double): this.type = {
+    this.EPSILON = e
+    this
+  }
+
+  def getTolerance: Double = this.EPSILON
 
   def prettyPrint: Unit = {
     println("*** :Model shapes: ***")
@@ -19,7 +29,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
   def getRawShapes: List[DenseVector[Double]] = shapes
 
-  def getNormalizedShapes: mutable.MutableList[DenseVector[Double]] = this.data
+  def getNormalizedShapes: ML[DenseVector[Double]] = this.data
 
   def align(v: DenseVector[Double] = this.data.head): Unit = {
     val calculateRotation = ActiveShapeModel.alignShapes(v) _
@@ -36,6 +46,23 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     this.data.foreach(vec => mean :+= vec)
     mean :/= this.data.length.toDouble
     mean
+  }
+
+  def alignShapes: DenseVector[Double] = {
+    //Iteratively align the set of shapes
+    //and calculate the mean shape resulting
+    //from the procedure.
+    this.align()
+    var oldMean = this.meanShape
+    val rotation = ActiveShapeModel.alignShapes(this.data.head) _
+    var newMean = rotation(oldMean)*oldMean
+
+    while(norm(newMean-oldMean, 2) >= this.EPSILON) {
+      this.align(newMean)
+      oldMean = this.meanShape
+      newMean = rotation(oldMean)*oldMean
+    }
+    newMean
   }
 }
 
