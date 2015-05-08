@@ -1,6 +1,7 @@
 package org.kuleuven.mai.vision.asm
 
 import breeze.linalg._
+import breeze.linalg.svd.DenseSVD
 
 import scala.collection.mutable.{MutableList => ML}
 
@@ -19,6 +20,8 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     this.EPSILON = e
     this
   }
+
+  def numPoints = this.data.length
 
   def getTolerance: Double = this.EPSILON
 
@@ -63,6 +66,33 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
       newMean = rotation(oldMean)*oldMean
     }
     newMean
+  }
+
+  private def pca(data: DenseMatrix[Double], components: Int): DenseMatrix[Double] = {
+    val d = zeroMean(data)
+    val decomp = svd(d)
+    val v = decomp.Vt
+    val model = v(0 until components, ::) //top 'components' eigenvectors
+    d * model.t
+  }
+
+  private def mean(v: Vector[Double]) = v.valuesIterator.sum / v.size
+
+  private def zeroMean(m: DenseMatrix[Double]) = {
+    val copy = m.copy
+    for (c <- 0 until m.cols) {
+      val col = copy(::, c)
+      val colMean = mean(col)
+      col -= colMean
+    }
+    //    println("data \n" + m)
+    //    println("mean \n" + copy)
+    copy
+  }
+
+  def decomposeShape(n: Int = this.data.head.length): DenseMatrix[Double] = {
+    val datamatrix = DenseMatrix.vertcat(this.data.map{_.toDenseMatrix}.toList:_*)
+    this.pca(datamatrix, n)
   }
 }
 
