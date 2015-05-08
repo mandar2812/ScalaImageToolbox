@@ -49,7 +49,7 @@ object IncisorsAlign {
     println("Mean Shape: "+meanshape)
 
     println("Carrying out PCA: ")
-    println(models.head.decomposeShape())
+    println(models.head.decomposeShape(20))
     println("Number of points: "+models.head.numPoints)
 
   }

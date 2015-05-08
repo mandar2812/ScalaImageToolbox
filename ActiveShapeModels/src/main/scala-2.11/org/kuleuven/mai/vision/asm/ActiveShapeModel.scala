@@ -72,8 +72,9 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     val d = zeroMean(data)
     val decomp = svd(d)
     val v = decomp.Vt
-    val model = v(0 until components, ::) //top 'components' eigenvectors
-    d * model.t
+    val model = v(0 until components/2, ::) //top 'components' eigenvectors
+    val ymodel = v(40 until 40+(components/2), ::)
+    d * DenseMatrix.vertcat(model, ymodel).t
   }
 
   private def mean(v: Vector[Double]) = v.valuesIterator.sum / v.size
