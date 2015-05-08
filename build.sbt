@@ -56,9 +56,10 @@ libraryDependencies in ThisBuild ++= Seq(
   "com.github.tototoshi" %% "scala-csv" % "1.2.1",
   "org.apache.logging.log4j" % "log4j-core" % "2.2")
 
-/*val javacppVersion = "0.10"
+/*val javacppVersion = "0.11"
 
 libraryDependencies in ThisBuild ++= Seq(
+  "org.bytedeco"                 % "javacpp" % javacppVersion,
   "org.bytedeco"                 % "javacv" % javacppVersion,
   "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier "",
   "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier platform

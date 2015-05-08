@@ -33,6 +33,4 @@ object SmoothImages {
     // but it doesnt make sense to shift that way. otherwize we wont see any chage in the data ...
     println(obj.kernelactualize(obj.kernel(0,2),2000,800))
   }
-
 }
-
