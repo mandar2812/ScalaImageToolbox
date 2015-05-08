@@ -28,9 +28,10 @@ object SmoothImages {
       }
     }
 
-    val obj = new RadioGraph(im,10)
-    val hista= new Histogram( obj.kernel(2000)(7) , 10)
-    println(hista.histo)
+    val obj = new RadioGraph(im,55)
+    val hista= new Histogram( obj.kernel(2000)(50) , 55)
+
+    println(hista.histmedian)
     println(hista.binedge)
 
 

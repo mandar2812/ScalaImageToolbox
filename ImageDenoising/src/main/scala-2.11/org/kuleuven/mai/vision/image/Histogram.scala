@@ -48,4 +48,25 @@ class Histogram( x: ML[Int],r:Int) {
     histogram
   }
 
+
+  def freqcumsum( y:DenseVector[Double] ) : DenseVector[Double] = {
+    val freqvec: DenseVector[Double]= DenseVector.zeros(y.length)
+    (0 to y.length-1).foreach(i=> freqvec(i) = y(i)/sum(y) +freqvec(i-1) )
+    println(freqvec)
+    freqvec
+
+  }
+
+  def extractmedian( x : DenseVector[Double]) : Int ={
+    var median: Int =0
+    val z: DenseVector[Double]= x
+    println(x)
+    (0 to x.length-1).find(i  => z(i)>= 0.5).foreach(i=> median =i)
+    median
+  }
+
+  def histmedian: Int = { val median: Int= extractmedian( freqcumsum( histo ))
+  median }
+
+
 }

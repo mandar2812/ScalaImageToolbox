@@ -37,24 +37,6 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
     kernel.drop(1) += shiftedcolumn
   }
 
-  def freqcumsum(y: ML[Int]): DenseVector[Double] = {
-    val z: DenseVector[Double]= DenseVector.zeros(y.length)
-    val l: DenseVector[Double]= DenseVector(y.map(_.toDouble).toArray)
-    val x: DenseVector[Double]= DenseVector(hist(abs(l),r,(0.0 ,abs(min(imag.flatten)).toDouble)).hist.toArray.reverse)
-    println(min(imag.flatten))
-    println(max(imag.flatten))
-    println(l)
-    (0 to x.length-1).foreach(i=> z(i) = x(i)/(x.length+1) + z(i-1))
-    z
-  }
-
-  def extractmedian(x : ML[Int]) : Int ={
-    var median: Int=0
-    var z: DenseVector[Double]= DenseVector.zeros(x.length)
-    z= freqcumsum(x)
-    (0 to x.length-1).find(i  => z(i) >= 0.5).foreach(i=> median=i)
-    median
-  }
 
 }
 
