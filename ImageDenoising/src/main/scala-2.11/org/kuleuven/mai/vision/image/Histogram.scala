@@ -1,7 +1,7 @@
 package org.kuleuven.mai.vision.image
 
 import breeze.linalg._
-
+import breeze.numerics.{ceil, abs, floor}
 import scala.collection.mutable.{MutableList => ML}
 /**
  * Created by Romain on 08/05/2015.
@@ -10,7 +10,9 @@ class Histogram( x: ML[Int],r:Int) {
 
 
   def binedge: DenseVector[Double]= {
+
     var a : Int= max(x)
+
     var b : Int= min(x)
     val edge: DenseVector[Double]= DenseVector.fill(2*r)(0)
     if (a==b ) {a=a+1
@@ -47,26 +49,4 @@ class Histogram( x: ML[Int],r:Int) {
     (0 to x.length-1).foreach(i=> histogram = histogr(x(i).toDouble) + histogram)
     histogram
   }
-
-
-  def freqcumsum( y:DenseVector[Double] ) : DenseVector[Double] = {
-    val freqvec: DenseVector[Double]= DenseVector.zeros(y.length)
-    (0 to y.length-1).foreach(i=> freqvec(i) = y(i)/sum(y) +freqvec(i-1) )
-    println(freqvec)
-    freqvec
-
-  }
-
-  def extractmedian( x : DenseVector[Double]) : Int ={
-    var median: Int =0
-    val z: DenseVector[Double]= x
-    println(x)
-    (0 to x.length-1).find(i  => z(i)>= 0.5).foreach(i=> median =i)
-    median
-  }
-
-  def histmedian: Int = { val median: Int= extractmedian( freqcumsum( histo ))
-  median }
-
-
 }
