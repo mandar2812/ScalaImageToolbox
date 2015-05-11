@@ -36,7 +36,7 @@ object SmoothImages {
     }
 
 
-    val obj = new RadioGraph(im,3)
+    val obj = new RadioGraph(im,2)
     obj.denoising
 
 
