@@ -10,6 +10,8 @@ import scala.collection.mutable.{MutableList => ML}
  */
 class RadioGraph (imag: List[ML[Int]], r: Int) {
 
+  def getPixel(x: Int, y: Int): Int = imag(x)(y)
+
   def getColumnIm(n: Int): ML[Int] = imag(n).slice(0, 2 * r + 1)
 
   // create a kernel matrix based on the column

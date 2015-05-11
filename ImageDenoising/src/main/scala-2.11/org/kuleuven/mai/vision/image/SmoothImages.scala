@@ -1,7 +1,10 @@
 package org.kuleuven.mai.vision.image
 
 import java.io.File
+import com.sksamuel.scrimage.Format.PNG
+import com.sksamuel.scrimage.filter.GaussianBlurFilter
 import com.sksamuel.scrimage.io.TiffReader
+import com.twelvemonkeys.imageio.metadata.exif.TIFF
 import org.apache.commons.io.FileUtils
 
 import scala.collection.mutable
@@ -25,19 +28,18 @@ object SmoothImages {
       }
     }
 
+    val radius = args(1).toInt
+    val obj = new RadioGraph(im,radius)
+    val newimg = obj.denoising
 
-    val obj = new RadioGraph(im,2)
-    obj.denoising
+    val newimage = image.resizeTo(im.length - (2*radius + 1),
+      im.head.length - (2*radius + 1))
+      .map{(x,y,_) => newimg(y)(x)}
 
-    /*var imge :BufferedImage = new BufferedImage(
-      3023,1500 , BufferedImage.TYPE_INT_RGB )
-     imge  = List.tabulate(imge.getWidth) { i =>
-      mutable.MutableList.tabulate(imge.getHeight) { j =>
-        imge.....(j,i) = obj.denoising(i)(j)
-      }
-    }
-   val  outputfile : File = new File("data/Radiographs/image.tif")
-        ImageIO.write(imge ,"tif", outputfile)*/
+    newimage.write(args(0), PNG)
+
+    val filteredimage = image.filter(new GaussianBlurFilter(radius))
+    filteredimage.write(args(2), PNG)
 
   }
 }
