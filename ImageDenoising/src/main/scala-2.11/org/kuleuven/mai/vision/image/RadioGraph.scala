@@ -10,7 +10,7 @@ import scala.collection.mutable.{MutableList => ML}
  */
 class RadioGraph (imag: List[ML[Int]], r: Int) {
 
-  def getPixel(x: Int, y: Int): Int = imag(x)(y)
+  def apply(x: Int)(y: Int): Int = imag(x)(y)
 
   def getColumnIm(n: Int): ML[Int] = imag(n).slice(0, 2 * r + 1)
 
@@ -28,7 +28,7 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
     (0 to x.length-1).find(i  => x(i)>= 0.5).get
 
   def getaveragemedian(edge: DenseVector[Double], median: Int): Int =
-    (edge(2*median)/2+edge(2*median+1)/2).toInt
+    edge(2*median).toInt
 
   def getmedhist(k: DenseVector[Double], binedges: DenseVector[Double]): Int =
     getaveragemedian(binedges, extractmedian(freqcumsum(k)))
