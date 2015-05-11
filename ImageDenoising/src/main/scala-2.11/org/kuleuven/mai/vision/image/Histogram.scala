@@ -55,6 +55,4 @@ class Histogram( x: ML[Int],r:Int) {
     (0 to x.length - 1).foreach(i => histogram = histogr(x(i).toDouble) + histogram)
     histogram
   }
-
-
 }

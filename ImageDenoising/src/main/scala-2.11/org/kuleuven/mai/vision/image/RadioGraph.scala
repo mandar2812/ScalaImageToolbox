@@ -131,12 +131,13 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
    var ker: ML[ML[Int]] = kernel(0)
    var initker: ML[ML[Int]] = kernel(0)
 
-   val denoised : List[ML[Int]] = List.tabulate(imag.head.length-(2*r+1)) { i =>
+   List.tabulate(imag.head.length-(2*r+1)) { i =>
      if (i != 0) {
        (0 to ker.length - 1).foreach{e =>
          ker(e) = shift(initker(e),e,  i+ r+1)
          initker(e)=ker(e)}
      }
+
      ML.tabulate(imag.length-(2*r+1)){ j =>
        if (j != 0 && i!=0 ) {
          var latent: ML[Int] = shift(firstcolumn(2*r+j), j+r, i +r)
@@ -147,7 +148,6 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
        med
      }
    }
-   denoised
  }
 
 
