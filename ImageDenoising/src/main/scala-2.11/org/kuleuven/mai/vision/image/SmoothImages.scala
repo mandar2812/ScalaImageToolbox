@@ -30,7 +30,7 @@ object SmoothImages {
 
     val radius = args(1).toInt
 
-    val imagechannels = (0 to 3).map{i => new RadioGraph(im.map{_.map{_(i)}},radius)}.map(_.denoising)
+    val imagechannels = (0 to 3).map{i => new RadioGraph(im.map{_.map{_(i)}},radius)}.map(_.denoisingfast)
 
 
     val newimage = image.resizeTo(im.length - (2*radius + 1),

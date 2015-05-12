@@ -1,5 +1,6 @@
 package org.kuleuven.mai.vision.image
 
+import breeze.linalg
 import breeze.linalg._
 import breeze.numerics.{ceil, abs, floor}
 import scala.collection.mutable.{MutableList => ML}
@@ -55,4 +56,16 @@ class Histogram( x: ML[Int],r:Int) {
     (0 to x.length - 1).foreach(i => histogram = histogr(x(i).toDouble) + histogram)
     histogram
   }
+
+
+  def extract(va : Int ): DenseVector[Double]={
+      this.histo - indicator(this.binedge)(va)
+
+  }
+
+  def adda(va : Int ): DenseVector[Double]={
+    this.histo + indicator(this.binedge)(va)
+  }
+
+
 }
