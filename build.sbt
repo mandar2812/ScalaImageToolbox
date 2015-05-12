@@ -54,7 +54,9 @@ val platform = {
 libraryDependencies in ThisBuild ++= Seq(
   "org.scalanlp" %% "breeze" % "0.11.2",
   "com.github.tototoshi" %% "scala-csv" % "1.2.1",
-  "org.apache.logging.log4j" % "log4j-core" % "2.2" )
+  "org.apache.logging.log4j" % "log4j-core" % "2.2",
+  "org.apache.spark" %% "spark-core" % "1.3.1",
+  "org.apache.spark" %% "spark-mllib" % "1.3.1")
 
 /*val javacppVersion = "0.11"
 
