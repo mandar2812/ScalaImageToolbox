@@ -8,8 +8,7 @@ import scala.collection.mutable.{MutableList => ML}
  * Created by Romain on 08/05/2015.
  */
 class Histogram( x: ML[Int],r:Int) {
-
-
+  
   def binedge: (DenseVector[Double], Int ,Int ) = {
 
     var a: Int = max(x)
@@ -22,8 +21,12 @@ class Histogram( x: ML[Int],r:Int) {
     }
     edge(0) = b.toDouble
     edge(edge.length - 1) = a.toDouble
-    (1 to 2 * r - 2).foreach(i => if (i % 2 != 0) edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
-    else edge(i) = edge(i - 1))
+    (1 to 2 * r - 2).foreach(i =>
+      if (i % 2 != 0) {
+        edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
+      } else {
+        edge(i) = edge(i - 1)
+      })
     (edge,b,a)
   }
 
@@ -53,23 +56,30 @@ class Histogram( x: ML[Int],r:Int) {
     val edge: DenseVector[Double] = this.binedge._1
     val histogr = indicator(edge) _
     var histogram: DenseVector[Double] = DenseVector.zeros(r)
-    (0 to x.length - 1).foreach(i => histogram = histogr(x(i).toDouble) + histogram)
+    (0 to x.length - 1).foreach(i =>
+      histogram = histogr(x(i).toDouble) + histogram
+    )
     histogram
   }
 
 
   def extract(va : Int ): DenseVector[Double]={
-    if(va.toDouble > this.binedge._3 || va.toDouble < this.binedge._2){ this.histo - indicator(actualizebinedge(va))(va.toDouble)}
-    else this.histo - indicator(this.binedge._1)(va)
+    if(va.toDouble > this.binedge._3 || va.toDouble < this.binedge._2){
+      this.histo - indicator(actualizebinedge(va))(va.toDouble)
+    } else {
+      this.histo - indicator(this.binedge._1)(va)
+    }
   }
 
-  def adda(va : Int ): DenseVector[Double]={
-    if(va > this.binedge._3 || va < this.binedge._2 ){ this.histo + indicator(actualizebinedge(va))(va.toDouble)}
-    else this.histo + indicator(this.binedge._1)(va)
+  def adda(va : Int ): DenseVector[Double] = {
+    if(va > this.binedge._3 || va < this.binedge._2 ){
+      this.histo + indicator(actualizebinedge(va))(va.toDouble)
+    } else {
+      this.histo + indicator(this.binedge._1)(va)
+    }
   }
 
- def actualizebinedge(va: Int) : DenseVector[Double]={
-
+ def actualizebinedge(va: Int) : DenseVector[Double] = {
    var a: Int = max(x)
    var b: Int = min(x)
    if(va>a){a=va}
@@ -81,12 +91,12 @@ class Histogram( x: ML[Int],r:Int) {
    }
    edge(0) = b.toDouble
    edge(edge.length - 1) = a.toDouble
-   (1 to 2 * r - 2).foreach(i => if (i % 2 != 0) edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
-   else edge(i) = edge(i - 1))
+   (1 to 2 * r - 2).foreach(i =>
+     if (i % 2 != 0) {
+       edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
+     } else {
+       edge(i) = edge(i - 1)
+     })
    edge
  }
-
-
-
-
 }
