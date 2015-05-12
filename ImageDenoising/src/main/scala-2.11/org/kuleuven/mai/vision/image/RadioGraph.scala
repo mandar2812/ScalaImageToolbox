@@ -89,46 +89,47 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
       actucol = getColumnIm(i)
       firstcolumn(i) = actucol
     }
-    var ker: ML[ML[Int]] = kernel(0)
+    val ker: ML[ML[Int]] = kernel(0)
     val initker: ML[ML[Int]] = kernel(0)
     var initkerhist: DenseVector[Double] = histandmedkernel(ker)._1
-    var histfirstcolumn: List[Histogram] = List.tabulate(imag.length)(i => new Histogram(firstcolumn(i), r))
-    List.tabulate(imag.head.length - (2 * r + 1)) { i => if (i != 0) {
-      (0 to ker.length - 1).foreach { e =>
-        ker(e) = shift(initker(e), e, i + r )
-        initker(e) = ker(e)
+    val histfirstcolumn: List[Histogram] = List.tabulate(imag.length)(i => new Histogram(firstcolumn(i), r))
+    List.tabulate(imag.head.length - (2 * r + 1)) { i =>
+      if (i != 0) {
+        (0 to ker.length - 1).foreach { e =>
+          ker(e) = shift(initker(e), e, i + r )
+          initker(e) = ker(e)
+        }
+        initkerhist=histandmedkernel(initker)._1
       }
-    initkerhist=histandmedkernel(initker)._1}
       ML.tabulate(imag.length - (2 * r + 1)) { j =>
         if (j >r) {
           if (i == 0) {
-            initkerhist.+=(histfirstcolumn(j + 2 * r).histo)
-            initkerhist.-=(histfirstcolumn(j - r).histo)
-            getaveragemedian(histfirstcolumn(j + 2 * r).actualizebinedge(imag(j + 2 * r)(i + 2 * r)), extractmedian(freqcumsum(initkerhist)))
+            initkerhist += histfirstcolumn(j + 2 * r).histo
+            initkerhist -= histfirstcolumn(j - r - 1).histo
+            getaveragemedian(
+              histfirstcolumn(j + 2 * r).actualizebinedge(imag(j + 2 * r)(i + 2 * r)),
+              extractmedian(freqcumsum(initkerhist))
+            )
+          } else {
+            val latenthisto = histfirstcolumn(j + 2 * r).extract(imag(j + 2 * r)(i - 1))
+            latenthisto :+= histfirstcolumn(j + 2 * r).adda(imag(j + 2 * r)(i + 2 * r))
+
+            initkerhist :+= latenthisto
+            initkerhist :-= histfirstcolumn(j - r-1).histo
+            getaveragemedian(histfirstcolumn(j + 2 * r).actualizebinedge(imag(j + 2 * r)(i + 2 * r)),
+              extractmedian(freqcumsum(initkerhist)))
+
           }
-
-          else {
-            var latenthisto: DenseVector[Double]= histfirstcolumn(j + 2 * r).extract(imag(j + 2 * r)(i - 1))
-            latenthisto=latenthisto+histfirstcolumn(j + 2 * r).adda(imag(j + 2 * r)(i + 2 * r))
-
-            initkerhist.+=(latenthisto)
-            initkerhist.-=(histfirstcolumn(j - r-1).histo)
-            getaveragemedian(histfirstcolumn(j + 2 * r).actualizebinedge(imag(j + 2 * r)(i + 2 * r)), extractmedian(freqcumsum(initkerhist)))
-
-          }
-        }
-        else { if(j==0){
-          histandmedkernel(ker)._2 }
-               else {
+        } else if(j==0){
+          histandmedkernel(ker)._2
+        } else {
           initkerhist.+=(histfirstcolumn(j + 2 * r).histo)
           initkerhist.-=(histfirstcolumn(j-1).histo)
-          getaveragemedian(histfirstcolumn(j + 2 * r).actualizebinedge(imag(j + 2 * r)(i + 2 * r)), extractmedian(freqcumsum(initkerhist)))
+          getaveragemedian(histfirstcolumn(j + 2 * r).actualizebinedge(imag(j + 2 * r)(i + 2 * r)),
+            extractmedian(freqcumsum(initkerhist)))
         }
-        }
-
       }
     }
-
   }
 }
 

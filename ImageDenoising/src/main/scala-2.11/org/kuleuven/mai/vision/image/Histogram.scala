@@ -8,7 +8,7 @@ import scala.collection.mutable.{MutableList => ML}
  * Created by Romain on 08/05/2015.
  */
 class Histogram( x: ML[Int],r:Int) {
-  
+
   def binedge: (DenseVector[Double], Int ,Int ) = {
 
     var a: Int = max(x)
