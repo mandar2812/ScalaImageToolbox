@@ -9,11 +9,11 @@ package object utils {
   def median(list: Seq[Double]): Double = {
     val random: (Int) => Int = Random.nextInt
     def medianK(list_sample: Seq[Double], k: Int, pivot: Double): Double = {
-      val split_list = list_sample.partition(_ <= pivot)
+      val split_list = list_sample.partition(_ < pivot)
       val s = split_list._1.length
       if(s == k) {
         pivot
-      } else if (s == list_sample.length) {
+      } else if (list_sample.sum == pivot * list_sample.length) {
         pivot
       } else if(s < k) {
         medianK(split_list._2, k - s,
