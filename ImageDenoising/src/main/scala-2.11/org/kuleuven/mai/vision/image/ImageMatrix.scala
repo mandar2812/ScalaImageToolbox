@@ -19,8 +19,6 @@ private[vision] class ImageMatrix(im: HashMap[(Int, Int), Int], w: Int, h: Int)
 
   private val _image = im
 
-  private val logger = Logger.getLogger(this.getClass)
-
   def width = _width
 
   def height = _height
@@ -51,7 +49,6 @@ object ImageMatrix {
     println("Creating HashMap for image")
     val rdd = for(i <- 0 until image.width; j <- 0 until image.height)
       yield ((i,j), image.pixel(i,j))
-    println("HashMap created successfully")
     new ImageMatrix(HashMap(rdd:_*), image.width, image.height)
   }
 

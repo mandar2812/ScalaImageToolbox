@@ -3,7 +3,7 @@ package org.kuleuven.mai.vision.filters
 import org.kuleuven.mai.vision.utils
 
 /**
- * Created by mandar on 12/5/15.
+ * @author mandar2812
  */
 class MedianFilter extends
 Filter[Iterable[(Int, Int, Int, Int)], List[List[Int]]]{
