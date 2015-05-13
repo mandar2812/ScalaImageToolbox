@@ -79,7 +79,5 @@ resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
 
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
-fork := true
-
-javaOptions in ThisBuild ++= Seq("-Dplatform.dependencies=true", "-Xmx1G")
+javaOptions in ThisBuild ++= Seq("-Dplatform.dependencies=true", "-Xmx2G")
 
