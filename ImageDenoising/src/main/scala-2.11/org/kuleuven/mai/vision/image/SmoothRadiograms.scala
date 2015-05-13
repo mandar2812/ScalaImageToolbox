@@ -13,14 +13,9 @@ import org.kuleuven.mai.vision.filters.MedianFilter
  */
 object SmoothRadiograms {
   def main(args: Array[String]): Unit = {
-    /*val conf = new SparkConf()
-      .setAppName("SmoothRadiograms")
-      .setMaster("local[4]")
-      .setExecutorEnv("spark.executor.memory", "1g")
-      .set("spark.storage.memoryFraction", "0.4")
-    val sc = new SparkContext(conf)*/
     val image = TiffReader.read(FileUtils.openInputStream(new File(args(0))))
-    val new_image = ImageMatrix.applyFilter(image, new MedianFilter(), 5, args(0))
+    val new_image = ImageMatrix.applyFilter(image, new MedianFilter(),
+      args(2).toInt, args(0))
     new_image.write(args(1), PNG)
   }
 }
