@@ -5,10 +5,11 @@ import breeze.linalg._
 import breeze.numerics.{ceil, abs, floor}
 import scala.collection.mutable.{MutableList => ML}
 /**
- * Created by Romain on 08/05/2015.
+ * @author @koldh, @mandar2812
  */
 class Histogram( x: ML[Int],r:Int) {
 
+  private val _bins = 2 * r
 
   def +( his1 : Histogram): Histogram =
     new Histogram(this.x ++ his1.binedge._2, r)
@@ -21,20 +22,21 @@ class Histogram( x: ML[Int],r:Int) {
     var a: Int = max(x)
 
     var b: Int = min(x)
-    val edge: DenseVector[Double] = DenseVector.fill(2 * r)(0)
+    //val edge: DenseVector[Double] = DenseVector.fill(_bins)(0)
     if (a == b) {
       a = a + 1
       b = b - 1
     }
-    edge(0) = b.toDouble
+    /*edge(0) = b.toDouble
     edge(edge.length - 1) = a.toDouble
     (1 to 2 * r - 2).foreach(i =>
       if (i % 2 != 0) {
         edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
       } else {
         edge(i) = edge(i - 1)
-      })
-    (edge,x,b,a)
+      })*/
+    val edge1 = DenseVector.tabulate(_bins+1){i => a + i*(b-a)/_bins.toDouble}
+    (edge1,x,b,a)
   }
 
   def indicator(edgebin: DenseVector[Double])(valeur: Double): DenseVector[Double] = {
