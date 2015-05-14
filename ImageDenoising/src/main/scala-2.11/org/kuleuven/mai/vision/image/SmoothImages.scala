@@ -18,7 +18,7 @@ object SmoothImages {
   def main(args: Array[String]): Unit = {
 
     val dataRoot = "data/Radiographs/01.tif"
-    val cat="C:\\Users\\Romain\\Desktop\\lenna.tif"
+    val cat="C:\\Users\\Romain\\Desktop\\Lenna.tif"
     val image = TiffReader.read(FileUtils.openInputStream(new File(cat)))
 
     println(s"Width: ${image.width} Height: ${image.height} Ratio: ${image.ratio}")
@@ -31,12 +31,12 @@ object SmoothImages {
 
     val radius = args(1).toInt
 
-    val imagechannels = (0 to 3).map{i => new RadioGraph(im.map{_.map{_(i)}},radius)}.map(_.denoising)
+    val imagechannels = (0 to 3).map{i => new RadioGraph(im.map{_.map{_(i)}},radius)}.map(_.denoisingfast3)
 
 
     val newimage = image.resizeTo(im.length - (2*radius + 1),
       im.head.length - (2*radius + 1))
-      .map{(x,y,pixel) => PixelTools.argb(PixelTools.alpha(pixel),
+      .map{(x,y,pixel) => PixelTools.argb(imagechannels.head(y)(x),
       imagechannels(1)(y)(x),
       imagechannels(2)(y)(x),
       imagechannels(3)(y)(x))}
