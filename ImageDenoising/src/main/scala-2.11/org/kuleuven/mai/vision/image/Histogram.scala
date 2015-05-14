@@ -20,27 +20,17 @@ class Histogram( x: ML[Int],r:Int) {
   def binedge: (DenseVector[Double], ML[Int], Int ,Int ) = {
 
     var a: Int = max(x)
-
     var b: Int = min(x)
-    //val edge: DenseVector[Double] = DenseVector.fill(_bins)(0)
     if (a == b) {
       a = a + 1
       b = b - 1
     }
-    /*edge(0) = b.toDouble
-    edge(edge.length - 1) = a.toDouble
-    (1 to 2 * r - 2).foreach(i =>
-      if (i % 2 != 0) {
-        edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
-      } else {
-        edge(i) = edge(i - 1)
-      })*/
     val edge1 = DenseVector.tabulate(_bins+1){i => a + i*(b-a)/_bins.toDouble}
     (edge1,x,b,a)
   }
 
   def indicator(edgebin: DenseVector[Double])(valeur: Double): DenseVector[Double] = {
-    val histovaleur: DenseVector[Double] = DenseVector.zeros(r)
+    /*val histovaleur: DenseVector[Double] = DenseVector.zeros(r)
     (0 to edgebin.length - 1).foreach(i => if (i % 2 == 0) {
       if (i != edgebin.length - 2) {
         if (valeur < edgebin(i + 1) && valeur >= edgebin(i)) {
@@ -57,8 +47,11 @@ class Histogram( x: ML[Int],r:Int) {
         }
       }
     }
-    )
-    histovaleur
+    )*/
+
+    DenseVector.tabulate(edgebin.length-1){i =>
+      if(valeur >= edgebin(i) && valeur <= edgebin(i+1)) 1.0 else 0.0
+    }
   }
 
   def histo: DenseVector[Double] = {
