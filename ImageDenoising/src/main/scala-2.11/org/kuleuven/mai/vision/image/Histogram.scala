@@ -36,7 +36,7 @@ class Histogram( x: ML[Int],r:Int) {
   }
 
   def histo: DenseVector[Double] =
-    x.map(point => indicator(this.binedge._1)(point)).sum
+    x.map(indicator(this.binedge._1)(_)).sum
 
   def recomphisto(hisnew : Histogram): DenseVector[Double]= {
     actualizebinedge(hisnew.binedge._3,hisnew.binedge._4)
