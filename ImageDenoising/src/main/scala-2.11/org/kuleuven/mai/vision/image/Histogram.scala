@@ -97,7 +97,6 @@ class Histogram( x: ML[Int],r:Int) {
 
   def extracthist(va : Int ): Histogram = {
     var xvalnew :ML[Int]= ML.tabulate(x.length)(k=>x(k))
-    var newx : ML[Int]= ML.tabulate( this.binedge._2.length){i=> this.binedge._2(i)}
     var comp : Int=x.length
     (0 to x.length-1).foreach(i=> if(x(i)==va) comp=i)
     if(comp<x.length) {
