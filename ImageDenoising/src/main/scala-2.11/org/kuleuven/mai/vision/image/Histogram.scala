@@ -58,41 +58,28 @@ class Histogram( x: ML[Int],r:Int) {
     }
   }
 
-  def addahist(va : Int ): Histogram = {
-   var newx : ML[Int]= ML.tabulate( this.binedge._2.length){i=> this.binedge._2(i)}
-       newx=newx+=va
-       new Histogram(newx,r)
-  }
+  def addahist(va : Int ): Histogram = new Histogram(this.binedge._2 ++ ML(va), r)
 
-  def extracthist(va : Int ): Histogram = {
-    var xvalnew :ML[Int]= ML.tabulate(x.length)(k=>x(k))
-    var comp : Int=x.length
-    (0 to x.length-1).foreach(i=> if(x(i)==va) comp=i)
-    if(comp<x.length) {
-      xvalnew= ML.tabulate(comp)(k=>x(k))
-      xvalnew=xvalnew++x.drop(comp+1)
+  def extracthist(va : Int ): Histogram = new Histogram(x diff ML(va) ,r)
+
+  def actualizebinedge(vamin: Int, vamax: Int) : DenseVector[Double] = {
+    var a: Int = max(x)
+    var b: Int = min(x)
+    if(vamax>a){a=vamax}
+    if(vamin<b){b=vamin}
+    val edge: DenseVector[Double] = DenseVector.fill(2 * r)(0)
+    if (a == b) {
+      a = a + 1
+      b = b - 1
     }
-    new Histogram(xvalnew ,r)
+    edge(0) = b.toDouble
+    edge(edge.length - 1) = a.toDouble
+    (1 to 2 * r - 2).foreach(i =>
+      if (i % 2 != 0) {
+        edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
+      } else {
+        edge(i) = edge(i - 1)
+      })
+    edge
   }
-
- def actualizebinedge(vamin: Int, vamax: Int) : DenseVector[Double] = {
-   var a: Int = max(x)
-   var b: Int = min(x)
-   if(vamax>a){a=vamax}
-   if(vamin<b){b=vamin}
-   val edge: DenseVector[Double] = DenseVector.fill(2 * r)(0)
-   if (a == b) {
-     a = a + 1
-     b = b - 1
-   }
-   edge(0) = b.toDouble
-   edge(edge.length - 1) = a.toDouble
-   (1 to 2 * r - 2).foreach(i =>
-     if (i % 2 != 0) {
-       edge(i) = edge(i - 1) + (a.toDouble - b.toDouble) / r.toDouble
-     } else {
-       edge(i) = edge(i - 1)
-     })
-   edge
- }
 }
