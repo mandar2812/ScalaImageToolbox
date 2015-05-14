@@ -30,39 +30,13 @@ class Histogram( x: ML[Int],r:Int) {
   }
 
   def indicator(edgebin: DenseVector[Double])(valeur: Double): DenseVector[Double] = {
-    /*val histovaleur: DenseVector[Double] = DenseVector.zeros(r)
-    (0 to edgebin.length - 1).foreach(i => if (i % 2 == 0) {
-      if (i != edgebin.length - 2) {
-        if (valeur < edgebin(i + 1) && valeur >= edgebin(i)) {
-          histovaleur(i / 2) = 1.0
-        }
-        else histovaleur(i / 2) = 0.0
-      }
-      else {
-        if (valeur <= edgebin(i+1 ) && valeur >= edgebin(i)) {
-          histovaleur(i / 2) = 1.0
-        }
-        else {
-          histovaleur(i / 2) = 0.0
-        }
-      }
-    }
-    )*/
-
     DenseVector.tabulate(edgebin.length-1){i =>
       if(valeur >= edgebin(i) && valeur <= edgebin(i+1)) 1.0 else 0.0
     }
   }
 
-  def histo: DenseVector[Double] = {
-    val edge: DenseVector[Double] = this.binedge._1
-    val histogr = indicator(edge) _
-    var histogram: DenseVector[Double] = DenseVector.zeros(r)
-    (0 to x.length - 1).foreach(i =>
-      histogram = histogr(x(i).toDouble) + histogram
-    )
-    histogram
-  }
+  def histo: DenseVector[Double] =
+    x.map(point => indicator(this.binedge._1)(point)).sum
 
   def recomphisto(hisnew : Histogram): DenseVector[Double]= {
     actualizebinedge(hisnew.binedge._3,hisnew.binedge._4)
