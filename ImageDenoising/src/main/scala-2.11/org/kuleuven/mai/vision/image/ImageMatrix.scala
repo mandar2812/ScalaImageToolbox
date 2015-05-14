@@ -27,18 +27,16 @@ private[vision] class ImageMatrix(im: HashMap[(Int, Int), Int], w: Int, h: Int)
 
   def neighbourhood(radius: Int)(x: Int, y: Int): Iterable[(Int, Int, Int, Int)] = {
     println("Calculating neighborhood for pixel: "+x+", "+y)
-    val neighborhoodKeys = for(
+    for(
       i <- math.max(0.0, x - radius).toInt to math.min(x + radius, this.width - 1);
       j <- math.max(0.0, y - radius).toInt to math.min(y + radius, this.height - 1)
-    ) yield (i,j)
-
-    neighborhoodKeys map (image get) map
-      (pixel => {
+    ) yield {
+        val pixel = image get (i,j)
         (PixelTools.alpha(pixel.get),
-          PixelTools.red(pixel.get),
-          PixelTools.green(pixel.get),
-          PixelTools.blue(pixel.get))
-      })
+        PixelTools.red(pixel.get),
+        PixelTools.green(pixel.get),
+        PixelTools.blue(pixel.get))
+      }
   }
 
 }
