@@ -19,7 +19,7 @@ object SmoothImages {
 
     val dataRoot = "data/Radiographs/01.tif"
     val cat="C:\\Users\\Romain\\Desktop\\Lenna.tif"
-    val image = TiffReader.read(FileUtils.openInputStream(new File(cat)))
+    val image = TiffReader.read(FileUtils.openInputStream(new File(dataRoot)))
 
     println(s"Width: ${image.width} Height: ${image.height} Ratio: ${image.ratio}")
 

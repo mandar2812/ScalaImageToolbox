@@ -56,7 +56,7 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
     val valuesdb : List[Double] = List.tabulate(getvalues(hist).length){i=> getvalues(hist).toList(i).toDouble}
     median(valuesdb).toInt
   }
-
+  def medianup(hist:Histogram): Int= median(hist.binedge._2.toList.map{_.toDouble}).toInt
 
   // access to (histogram,median) kernel's couple
   def histandmedkernel(kernel: ML[ML[Int]]): (DenseVector[Double], Int) = {
@@ -266,28 +266,30 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
     val histcol: ML[Histogram] = ML.tabulate(imag.length)(i => new Histogram(firstcolumn(i), r))
 
     ML.tabulate(imag.head.length - (2 * r+1)) { i =>
-      if(i!=0){ kerhist=kerhistinit
-        (0 to 2*r).foreach{l=> kerhist(l)= kerhist(l).extracthist(imag(l)(i-1))
-                                kerhist(l)=kerhist(l).addahist(imag(l)(i+2*r))
+      if(i!=0){
+        (0 to 2*r).foreach{l=> kerhist(l)= kerhistinit(l).extracthist(imag(l)(i-1))
+                                kerhist(l)=kerhistinit(l).addahist(imag(l)(i+2*r))
 
       }
         kerhistinit=kerhist
-      kerline=align(kerhist)
+
       }
       ML.tabulate(imag.length - (2 * r+1)) { j =>
         if(j!=0){
           if(i==0){
             kerhist= kerhist.drop(1)+=histcol(j+2*r)
-            kerline=align(kerhist)
+
             }
           else {
-             kerhist= kerhist.drop(1) += histcol(j+2*r).extracthist(imag(j+2*r)(i-1)).addahist(imag(j+2*r)(i+2*r))
-             kerline= align(kerhist)
+               histcol(j+2*r)=histcol(j+2*r).extracthist(imag(j+2*r)(i-1)).addahist(imag(j+2*r)(i+2*r) )
+              kerhist = kerhist.drop(1) += histcol(j+2*r)
+
           }
           }
+        kerline= align(kerhist)
         println("length: " +kerhist.length+" lengthvalue: " +kerhist.head.binedge._2.length)
          println("i:" +i +" j: "+j)
-         medianvalue(kerline)
+         medianup(kerline)
       }
       }
     }
