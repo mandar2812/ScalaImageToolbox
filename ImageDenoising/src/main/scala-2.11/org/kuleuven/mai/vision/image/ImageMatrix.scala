@@ -26,7 +26,7 @@ private[vision] class ImageMatrix(im: HashMap[(Int, Int), Int], w: Int, h: Int)
   def image = _image
 
   def neighbourhood(radius: Int)(x: Int, y: Int): Iterable[(Int, Int, Int, Int)] = {
-    println("Calculating neighborhood for pixel: "+x+", "+y)
+    //println("Calculating neighborhood for pixel: "+x+", "+y)
     for(
       i <- math.max(0.0, x - radius).toInt to math.min(x + radius, this.width - 1);
       j <- math.max(0.0, y - radius).toInt to math.min(y + radius, this.height - 1)
@@ -55,10 +55,14 @@ object ImageMatrix {
                     List[List[Int]]],
                   r: Int, path: String): Image = {
     val sparkImage = ImageMatrix(image, path)
+    val npixels = image.width * image.height
     val neighborhoodFunction = sparkImage.neighbourhood(r) _
     image.map((x,y,pixel) => {
       val n = neighborhoodFunction(x,y)
+      val percent = 100.0*x.toFloat*y.toFloat/npixels.toFloat
       val vals_argb = filter.evaluate(n)
+      if(math.floor(percent) % 2 == 0)
+        println("Progress :"+percent.toFloat+"% "+"="*(percent/10).toInt)
       PixelTools.argb(vals_argb(0),
         vals_argb(1),
         vals_argb(2),
