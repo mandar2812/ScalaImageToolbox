@@ -6,7 +6,6 @@ import java.util.Calendar
 import com.sksamuel.scrimage.Format.PNG
 import com.sksamuel.scrimage.io.TiffReader
 import org.apache.commons.io.FileUtils
-import org.apache.spark.{SparkContext, SparkConf}
 import org.kuleuven.mai.vision.filters.MedianFilter
 
 /**

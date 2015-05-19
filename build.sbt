@@ -10,6 +10,10 @@ organization := "org.kuleuven.mai"
 
 classpathTypes += "maven-plugin"
 
+val breezeVersion = "0.11.2"
+
+val javacppVersion = "0.11"
+
 lazy val root = (project in file(".")).aggregate(ActiveShapeModels,
   ImageDenoising, ModelReconstruction)
 
@@ -52,32 +56,29 @@ val platform = {
 }
 
 libraryDependencies in ThisBuild ++= Seq(
-  "org.scalanlp" %% "breeze" % "0.11.2",
+  "org.scalanlp" %% "breeze" % breezeVersion,
+  "org.scalanlp" %% "breeze-natives" % breezeVersion,
   "com.github.tototoshi" %% "scala-csv" % "1.2.1",
   "org.apache.logging.log4j" % "log4j-core" % "2.2",
   "org.apache.spark" %% "spark-core" % "1.3.1",
-  "org.apache.spark" %% "spark-mllib" % "1.3.1")
-
-/*val javacppVersion = "0.11"
-
-libraryDependencies in ThisBuild ++= Seq(
+  "org.apache.spark" %% "spark-mllib" % "1.3.1",
   "org.bytedeco"                 % "javacpp" % javacppVersion,
   "org.bytedeco"                 % "javacv" % javacppVersion,
   "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier "",
-  "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier platform
-)*/
+  "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier platform,
+  "xerces" % "xercesImpl" % "2.8.1",
+  "com.sksamuel.scrimage" %% "scrimage-core" % "1.4.2",
+  "com.sksamuel.scrimage" %% "scrimage-canvas" % "1.4.2",
+  "com.sksamuel.scrimage" %% "scrimage-filters" % "1.4.2"
+)
 
-libraryDependencies in ThisBuild += "xerces" % "xercesImpl" % "2.8.1"
-
-libraryDependencies in ThisBuild += "com.sksamuel.scrimage" %% "scrimage-core" % "1.4.2"
-
-libraryDependencies in ThisBuild += "com.sksamuel.scrimage" %% "scrimage-canvas" % "1.4.2"
-
-libraryDependencies in ThisBuild += "com.sksamuel.scrimage" %% "scrimage-filters" % "1.4.2"
-
-resolvers += "Maven Central Server" at "http://repo1.maven.org/maven2"
-
-resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
+resolvers ++= Seq(
+  // other resolvers here
+  // if you want to use snapshot builds (currently 0.12-SNAPSHOT), use this.
+  "Maven Central Server" at "http://repo1.maven.org/maven2",
+  /*"Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/",*/
+  "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
+)
 
 javaOptions in ThisBuild ++= Seq("-Dplatform.dependencies=true", "-Xmx2G")
 

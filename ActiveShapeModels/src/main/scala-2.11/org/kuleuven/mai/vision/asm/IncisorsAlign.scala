@@ -49,8 +49,10 @@ object IncisorsAlign {
     println("Mean Shape: "+meanshape)
 
     println("Carrying out PCA: ")
-    println(models.head.decomposeShape(20))
-    println("Number of points: "+models.head.numPoints)
+    println(models.head.getNormalizedShapesAsMatrix * models.head.decomposeShape(20))
+    println("Number of points: "+models.head.numPoints+"\n")
+    println("Fit for point: \n"+models(1).getRawShapes.head)
+    println("Params: \n"+models.head.fit(models(1).getRawShapes.head))
 
   }
 }

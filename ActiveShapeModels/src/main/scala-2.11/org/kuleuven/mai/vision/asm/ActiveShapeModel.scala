@@ -2,6 +2,8 @@ package org.kuleuven.mai.vision.asm
 
 import breeze.linalg._
 import breeze.linalg.svd.DenseSVD
+import org.apache.commons.math3.distribution.MultivariateNormalDistribution
+import org.kuleuven.mai.vision.utils
 
 import scala.collection.mutable.{MutableList => ML}
 
@@ -10,11 +12,14 @@ import scala.collection.mutable.{MutableList => ML}
  */
 class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
-  private var EPSILON: Double = 0.001
+  private var EPSILON: Double = 0.0001
 
   private val data: ML[DenseVector[Double]] =
     ML(shapes.map(v => ActiveShapeModel.centerLandmarks(v))
-      .map(v => ActiveShapeModel.scaleLandmarks(v)):_*)
+      .map(v => ActiveShapeModel.scaleLandmarks(v._1)):_*)
+
+  private val centroids: List[DenseVector[Double]] =
+    shapes.map(v => ActiveShapeModel.centerLandmarks(v)._2)
 
   def setTolerance(e: Double): this.type = {
     this.EPSILON = e
@@ -34,6 +39,9 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
   def getNormalizedShapes: ML[DenseVector[Double]] = this.data
 
+  def getNormalizedShapesAsMatrix =
+    DenseMatrix.vertcat(this.data.map{_.toDenseMatrix}.toList:_*)
+
   def align(v: DenseVector[Double] = this.data.head): Unit = {
     val calculateRotation = ActiveShapeModel.alignShapes(v) _
 
@@ -45,10 +53,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
   }
 
   def meanShape: DenseVector[Double] = {
-    val mean = DenseVector.zeros[Double](this.data.head.length)
-    this.data.foreach(vec => mean :+= vec)
-    mean :/= this.data.length.toDouble
-    mean
+    this.data.reduce(_+_) /= this.data.length.toDouble
   }
 
   def alignShapes: DenseVector[Double] = {
@@ -74,7 +79,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     val v = decomp.Vt
     val model = v(0 until components/2, ::) //top 'components' eigenvectors
     val ymodel = v(40 until 40+(components/2), ::)
-    data * DenseMatrix.vertcat(model, ymodel).t
+    DenseMatrix.vertcat(model, ymodel).t
   }
 
   private def mean(v: Vector[Double]) = v.valuesIterator.sum / v.size
@@ -86,20 +91,50 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
       val colMean = mean(col)
       col -= colMean
     }
-    //    println("data \n" + m)
-    //    println("mean \n" + copy)
     copy
   }
 
-  def decomposeShape(n: Int = this.data.head.length): DenseMatrix[Double] = {
-    val datamatrix = DenseMatrix.vertcat(this.data.map{_.toDenseMatrix}.toList:_*)
-    this.pca(datamatrix, n)
+  def decomposeShape(n: Int = this.data.head.length): DenseMatrix[Double] =
+    this.pca(this.getNormalizedShapesAsMatrix, n)
+
+  def fit(vector: DenseVector[Double])
+  :(DenseVector[Double], DenseMatrix[Double],
+    Double, DenseVector[Double]) = {
+    val scale = norm(vector, 2)
+    val (centered_vector, vector_centroid) = ActiveShapeModel.centerLandmarks(vector)
+    val norm_vector = ActiveShapeModel.scaleLandmarks(centered_vector)
+    var x = this.meanShape
+    var b = DenseVector.fill(x.length)(0.0)
+    val translation = DenseVector.vertcat(
+      DenseVector.fill(x.length/2)(vector_centroid(0)),
+      DenseVector.fill(x.length/2)(vector_centroid(1))
+    )
+    var y = vector
+    val rotation = ActiveShapeModel.alignShapes(norm_vector) _
+    val eigenvectors = this.decomposeShape()
+    (1 to 100).foreach(i => {
+      y = rotation(x)*norm_vector
+      b = eigenvectors.t * (y - this.meanShape)
+      x = this.meanShape + eigenvectors*b
+    })
+    (translation, rotation(x), scale, b)
+  }
+
+  def sampleCentroid = {
+    val (mean, covariance) = utils.getStats(this.centroids)
+    val centroid_dist = new MultivariateNormalDistribution(mean.toArray,
+      Array.tabulate(covariance.rows, covariance.cols){
+        (i,j) => covariance(i,j)
+      })
+    println("Sample Centroid: "+centroid_dist.sample().toList)
+    DenseVector(centroid_dist.sample())
   }
 }
 
 object ActiveShapeModel {
 
-  def centerLandmarks(vector: DenseVector[Double]): DenseVector[Double] = {
+  def centerLandmarks(vector: DenseVector[Double]):
+  (DenseVector[Double], DenseVector[Double]) = {
     val num: Int = vector.length/2
     val x = vector(0 to num - 1)
     val y = vector(num to vector.length - 1)
@@ -107,14 +142,14 @@ object ActiveShapeModel {
     val ymean = sum(y)/num
     val a = x - xmean
     val b = y - ymean
-    DenseVector.vertcat(a,b)
+    (DenseVector.vertcat(a,b), DenseVector(xmean, ymean))
   }
 
   def scaleLandmarks(vector: DenseVector[Double]): DenseVector[Double]
   = vector /= norm(vector, 2)
 
   def center(list: List[DenseVector[Double]]): List[DenseVector[Double]] = {
-    list.map(v => ActiveShapeModel.centerLandmarks(v))
+    list.map(v => ActiveShapeModel.centerLandmarks(v)._1)
   }
 
   def scale(list: List[DenseVector[Double]]): List[DenseVector[Double]] = {
