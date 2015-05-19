@@ -14,6 +14,8 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
   private var EPSILON: Double = 0.0001
 
+  private var MAX_ITERATIONS = 20
+
   private val data: ML[DenseVector[Double]] =
     ML(shapes.map(v => ActiveShapeModel.centerLandmarks(v))
       .map(v => ActiveShapeModel.scaleLandmarks(v._1)):_*)
@@ -112,7 +114,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     var y = vector
     val rotation = ActiveShapeModel.alignShapes(norm_vector) _
     val eigenvectors = this.decomposeShape()
-    (1 to 100).foreach(i => {
+    (1 to this.MAX_ITERATIONS).foreach(i => {
       y = rotation(x)*norm_vector
       b = eigenvectors.t * (y - this.meanShape)
       x = this.meanShape + eigenvectors*b
