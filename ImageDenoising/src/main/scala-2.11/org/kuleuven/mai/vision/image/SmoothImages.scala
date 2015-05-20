@@ -17,7 +17,7 @@ import scala.collection.mutable
 object SmoothImages {
   def main(args: Array[String]): Unit = {
 
-    val dataRoot = "data/Radiographs/01.tif"
+    val dataRoot = "data/Radiographs/03.tif"
     val cat="C:\\Users\\Romain\\Desktop\\Lenna.tif"
     val image = TiffReader.read(FileUtils.openInputStream(new File(dataRoot)))
 

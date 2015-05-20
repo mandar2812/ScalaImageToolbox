@@ -281,7 +281,7 @@ class RadioGraph (imag: List[ML[Int]], r: Int) {
 
             }
           else {
-               histcol(j+2*r)=histcol(j+2*r).extracthist(imag(j+2*r)(i-1)).addahist(imag(j+2*r)(i+2*r) )
+              histcol(j+2*r)=histcol(j+2*r).extracthist(imag(j+2*r)(i-1)).addahist(imag(j+2*r)(i+2*r) )
               kerhist = kerhist.drop(1) += histcol(j+2*r)
 
           }

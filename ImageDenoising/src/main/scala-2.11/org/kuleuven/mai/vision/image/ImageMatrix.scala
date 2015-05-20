@@ -6,6 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.kuleuven.mai.vision.filters.Filter
 
 import scala.collection.immutable.HashMap
+import scala.collection.mutable
 import scala.concurrent.Future
 
 /**
@@ -49,6 +50,23 @@ object ImageMatrix {
     val rdd = for(i <- 0 until image.width; j <- 0 until image.height)
       yield ((i,j), image.pixel(i,j))
     new ImageMatrix(HashMap(rdd:_*), image.width, image.height)
+  }
+
+  def applyFilterhisto(image : Image, r: Int): Image ={
+    val im: List[mutable.MutableList[Array[Int]]] = List.tabulate(image.width) { i =>
+      mutable.MutableList.tabulate(image.height) {j =>
+        image.argb(i, j)
+      }}
+    val imagechannels = (0 to 3).map{i => new RadioGraph(im.map{_.map{_(i)}},r)}.map(_.denoisingfast3)
+
+    val newimage = image.resizeTo(im.length - (2*r + 1),
+      im.head.length - (2*r + 1))
+      .map{(x,y,pixel) => PixelTools.argb(imagechannels.head(y)(x),
+      imagechannels(1)(y)(x),
+      imagechannels(2)(y)(x),
+      imagechannels(3)(y)(x))}
+
+    newimage
   }
 
   def applyFilter(image: Image,
