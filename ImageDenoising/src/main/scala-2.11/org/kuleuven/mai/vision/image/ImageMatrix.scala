@@ -1,11 +1,12 @@
 package org.kuleuven.mai.vision.image
 
-import com.sksamuel.scrimage.{ScaleMethod, Color, PixelTools, Image}
+import com.sksamuel.scrimage._
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.kuleuven.mai.vision.filters.Filter
 
 import scala.collection.immutable.HashMap
+import scala.concurrent.Future
 
 /**
  * @author mandar2812
@@ -54,8 +55,7 @@ object ImageMatrix {
                   filter: Filter[Iterable[(Int, Int, Int, Int)],
                     List[List[Int]]],
                   r: Int): Image = {
-    val sparkImage = ImageMatrix(image)
-    val neighborhoodFunction = sparkImage.neighbourhood(r) _
+    val neighborhoodFunction = ImageMatrix.neighbourhood(image)(r) _
     var flag = false
     image.map((x,y,pixel) => {
       val n = neighborhoodFunction(x,y)
@@ -76,9 +76,20 @@ object ImageMatrix {
 
   def subsample(image: Image, scale: Double = 0.5): Image =
     image.fit((image.width*scale).toInt,
-      (image.height*scale).toInt,
-      color = Color.Black,
-      scaleMethod = ScaleMethod.Bicubic)
+    (image.height*scale).toInt,
+    color = Color.Black,
+    scaleMethod = ScaleMethod.Bicubic)
+
+  def neighbourhood(image: Image)(radius: Int)(x: Int, y: Int): Iterable[(Int, Int, Int, Int)] = {
+    //println("Calculating neighborhood for pixel: "+x+", "+y)
+    val (x1, y1) = (math.max(0.0, x - radius).toInt, math.max(0.0, y - radius).toInt)
+    val (x2, y2) = (math.min(x + radius, image.width - 1), math.min(y + radius, image.height - 1))
+    image.pixels(x1,y1,x2-x1,y2-y1).map(pixel =>
+      (PixelTools.alpha(pixel),
+      PixelTools.red(pixel),
+      PixelTools.green(pixel),
+      PixelTools.blue(pixel)))
+  }
 
   def alpha(image: RDD[((Long, Long), Array[Int])]) =
     image.map{pixel => (pixel._1, pixel._2(0))}

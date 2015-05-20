@@ -3,6 +3,7 @@ package org.kuleuven.mai.vision.image
 import java.io.File
 import java.util.Calendar
 
+import com.sksamuel.scrimage.AsyncImage
 import com.sksamuel.scrimage.Format.PNG
 import com.sksamuel.scrimage.io.TiffReader
 import org.apache.commons.io.FileUtils
