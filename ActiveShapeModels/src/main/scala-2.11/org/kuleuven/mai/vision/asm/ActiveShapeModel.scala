@@ -3,7 +3,6 @@ package org.kuleuven.mai.vision.asm
 import java.io.File
 
 import breeze.linalg._
-import breeze.linalg.svd.DenseSVD
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import org.kuleuven.mai.vision.utils
 
@@ -16,14 +15,22 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
   private var EPSILON: Double = 0.0001
 
-  private var MAX_ITERATIONS = 20
+  private var MAX_ITERATIONS = 1
 
-  private val data: ML[DenseVector[Double]] =
-    ML(shapes.map(v => ActiveShapeModel.centerLandmarks(v))
-      .map(v => ActiveShapeModel.scaleLandmarks(v._1)):_*)
+  private val scale = ActiveShapeModel.scaleLandmarks _
 
-  private val centroids: List[DenseVector[Double]] =
-    shapes.map(v => ActiveShapeModel.centerLandmarks(v)._2)
+  private val center = ActiveShapeModel.centerLandmarks _
+
+  private val process = ActiveShapeModel.process _
+
+  private def alignment(x: DenseVector[Double])(y: DenseVector[Double]) =
+    ActiveShapeModel.alignShapes(x)(y)
+
+  private val (data, scales, centroids) = process(shapes)
+
+  private val dims = shapes.head.length
+
+  private var SHAPE_DENSITY_THRESHOLD = 0.5*math.pow(2*math.Pi, -1*dims/2)
 
   def setTolerance(e: Double): this.type = {
     this.EPSILON = e
@@ -47,7 +54,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     DenseMatrix.vertcat(this.data.map{_.toDenseMatrix}.toList:_*)
 
   def align(v: DenseVector[Double] = this.data.head): Unit = {
-    val calculateRotation = ActiveShapeModel.alignShapes(v) _
+    val calculateRotation = alignment(v) _
 
     (1 to this.data.length).foreach(i => {
       val vec = this.data(i-1)
@@ -66,7 +73,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
     //from the procedure.
     this.align()
     var oldMean = this.meanShape
-    val rotation = ActiveShapeModel.alignShapes(this.data.head) _
+    val rotation = alignment(this.data.head) _
     var newMean = rotation(oldMean)*oldMean
 
     while(norm(newMean-oldMean, 2) >= this.EPSILON) {
@@ -102,24 +109,33 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
   def ShapeDistribution(n: Int = this.data.head.length): MultivariateNormalDistribution = {
     val eigenvectors = this.pca(n)
     val mean = this.meanShape
-    val shapes = this.data.toList.map(shape => {
+    val shapeslist = this.data.toList.map(shape => {
       eigenvectors.t * (shape - mean)
     })
 
-    val (meanvec, covariance) = utils.getStats(shapes)
-
+    val (meanvec, covariance) = utils.getStats(shapeslist)
+    val d = det(covariance)
+    val adjcov = if(d == 0.0) covariance + DenseMatrix.eye[Double](shapeslist.head.length)
+    else covariance
+    val da = det(adjcov)
+    this.SHAPE_DENSITY_THRESHOLD = 0.5*math.pow(2*math.Pi, -1*dims/2)*math.pow(da, -0.5)
     new MultivariateNormalDistribution(meanvec.toArray,
       Array.tabulate(covariance.rows, covariance.cols){
-        (i,j) => covariance(i, j)
+        (i,j) => adjcov(i, j)
       })
   }
 
   def reconstructData(n: Int = this.data.head.length): List[DenseVector[Double]] = {
     val eigenvectors = this.pca(n)
     val mean = this.meanShape
-    this.data.toList.map(shape => {
-      val b = eigenvectors.t * (shape - mean)
-      mean + (eigenvectors * b)
+    (0 until this.data.length).toList.map(shape => {
+      val translation = DenseVector.vertcat(
+        DenseVector.fill(dims/2)(centroids(shape)(0)),
+        DenseVector.fill(dims/2)(centroids(shape)(1))
+      )
+      val b = eigenvectors.t * (this.data(shape) - mean)
+      val x = mean + (eigenvectors * b)
+      (x:*=scales(shape)) + translation
     })
   }
 
@@ -127,11 +143,8 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
   :(DenseVector[Double], DenseMatrix[Double],
     Double, DenseVector[Double]) = {
 
-    val (centered_vector, vector_centroid) = ActiveShapeModel.centerLandmarks(vector)
-
-    val scale = norm(centered_vector, 2)
-    val norm_vector = ActiveShapeModel.scaleLandmarks(centered_vector)
-
+    val (centered_vector, vector_centroid) = center(vector)
+    val (norm_vector, s) = scale(centered_vector)
     var x = this.meanShape
     var b = DenseVector.fill(x.length)(0.0)
 
@@ -140,15 +153,17 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
       DenseVector.fill(x.length/2)(-1*vector_centroid(1))
     )
 
+    val bdist = this.ShapeDistribution()
     var y = vector
-    val rotation = ActiveShapeModel.alignShapes(norm_vector) _
+    val rotation = alignment(norm_vector) _
     val eigenvectors = this.pca()
     (1 to this.MAX_ITERATIONS).foreach(i => {
       y = rotation(x)*norm_vector
       b = eigenvectors.t * (y - this.meanShape)
+      val prob = bdist.density(b.toArray)
       x = this.meanShape + eigenvectors*b
     })
-    (translation, rotation(x), scale, b)
+    (translation, rotation(x), s, b)
   }
 
   def CentroidDistribution: MultivariateNormalDistribution = {
@@ -185,16 +200,8 @@ object ActiveShapeModel {
     (DenseVector.vertcat(a,b), DenseVector(xmean, ymean))
   }
 
-  def scaleLandmarks(vector: DenseVector[Double]): DenseVector[Double]
-  = vector /= norm(vector, 2)
-
-  def center(list: List[DenseVector[Double]]): List[DenseVector[Double]] = {
-    list.map(v => ActiveShapeModel.centerLandmarks(v)._1)
-  }
-
-  def scale(list: List[DenseVector[Double]]): List[DenseVector[Double]] = {
-    list.map(v => ActiveShapeModel.scaleLandmarks(v))
-  }
+  def scaleLandmarks(vector: DenseVector[Double]): (DenseVector[Double], Double)
+  = (vector /= norm(vector, 2), norm(vector, 2))
 
   def alignShapes(shape1: DenseVector[Double])(shape2: DenseVector[Double])
   : DenseMatrix[Double] = {
@@ -221,6 +228,16 @@ object ActiveShapeModel {
       DenseMatrix.vertcat(Block1, Block3),
       DenseMatrix.vertcat(Block2, Block4)
     )
+  }
+
+  def process(shapes: List[DenseVector[Double]]):
+  (ML[DenseVector[Double]], List[Double], List[DenseVector[Double]]) = {
+    val l = shapes.map(s => {
+      val (cv, c) = centerLandmarks(s)
+      val (nv, n) = scaleLandmarks(cv)
+      (nv, n, c)
+    }).unzip3
+    (ML(l._1:_*), l._2, l._3)
   }
 
 }

@@ -46,16 +46,19 @@ object IncisorsAlign {
       models.head.getNormalizedShapes.length)
 
     println(models.head.getRawShapes(1))
-    println(models.head.getNormalizedShapes(1))
+    //println(models.head.getNormalizedShapes(1))
     println("After alignment with the first")
     val meanshape = models.head.alignShapes
     println(models.head.getNormalizedShapes(1))
-    println("Mean Shape: "+meanshape)
-    println("Carrying out PCA: ")
-    println(models.head.getNormalizedShapesAsMatrix * models.head.pca(20))
-    println("Number of points: "+models.head.numPoints+"\n")
+    //println("Mean Shape: "+meanshape)
+    //println("Carrying out PCA: ")
+    //println(models.head.getNormalizedShapesAsMatrix * models.head.pca(20))
+    //println("Number of points: "+models.head.numPoints+"\n")
     println("Fit for point: \n"+models(1).getRawShapes.head)
     println("Params: \n"+models.head.fit(models(1).getRawShapes.head))
+    //val recon = models.head.reconstructData().head
+    //println("Reconstructed Data: "+recon)
+    //println("Dims: "+recon.length)
 
   }
 }
