@@ -10,6 +10,7 @@ import com.github.tototoshi.csv.CSVReader
 object IncisorsAlign {
   def main(args: Array[String]): Unit = {
     val dataRoot = "data/Landmarks/original/"
+    val imageRoot = "data/Radiographs/"
     //Load the landmarks for all 14 images
     //for every image, load the landmarks of
     //each incisor in a list
@@ -34,12 +35,15 @@ object IncisorsAlign {
       landmarks.map{_(tooth)}
     }
 
-    val models = landmarksByTooth.map(i => new ActiveShapeModel(i))
+    val image_files = new java.io.File(imageRoot)
+      .listFiles
+      .filter(_.getName.endsWith(".tif"))
+
+    val models = landmarksByTooth.map(i => ActiveShapeModel(i, image_files))
 
     println("Number of teeth: "+models.length)
     println("Number of points for each tooth: "+
       models.head.getNormalizedShapes.length)
-
 
     println(models.head.getRawShapes(1))
     println(models.head.getNormalizedShapes(1))
@@ -47,9 +51,8 @@ object IncisorsAlign {
     val meanshape = models.head.alignShapes
     println(models.head.getNormalizedShapes(1))
     println("Mean Shape: "+meanshape)
-
     println("Carrying out PCA: ")
-    println(models.head.getNormalizedShapesAsMatrix * models.head.decomposeShape(20))
+    println(models.head.getNormalizedShapesAsMatrix * models.head.pca(20))
     println("Number of points: "+models.head.numPoints+"\n")
     println("Fit for point: \n"+models(1).getRawShapes.head)
     println("Params: \n"+models.head.fit(models(1).getRawShapes.head))
