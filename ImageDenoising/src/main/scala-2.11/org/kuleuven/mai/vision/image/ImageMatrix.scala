@@ -1,6 +1,6 @@
 package org.kuleuven.mai.vision.image
 
-import com.sksamuel.scrimage.{PixelTools, Image}
+import com.sksamuel.scrimage.{ScaleMethod, Color, PixelTools, Image}
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.kuleuven.mai.vision.filters.Filter
@@ -43,7 +43,7 @@ private[vision] class ImageMatrix(im: HashMap[(Int, Int), Int], w: Int, h: Int)
 
 object ImageMatrix {
   val logger = Logger.getLogger(this.getClass)
-  private[vision] def apply(image: Image, path: String): ImageMatrix = {
+  private[vision] def apply(image: Image): ImageMatrix = {
     println("Creating HashMap for image")
     val rdd = for(i <- 0 until image.width; j <- 0 until image.height)
       yield ((i,j), image.pixel(i,j))
@@ -53,22 +53,32 @@ object ImageMatrix {
   def applyFilter(image: Image,
                   filter: Filter[Iterable[(Int, Int, Int, Int)],
                     List[List[Int]]],
-                  r: Int, path: String): Image = {
-    val sparkImage = ImageMatrix(image, path)
-    val npixels = image.width * image.height
+                  r: Int): Image = {
+    val sparkImage = ImageMatrix(image)
     val neighborhoodFunction = sparkImage.neighbourhood(r) _
+    var flag = false
     image.map((x,y,pixel) => {
       val n = neighborhoodFunction(x,y)
-      val percent = 100.0*x.toFloat*y.toFloat/npixels.toFloat
+      val percent = 100.0*x.toFloat/image.width
       val vals_argb = filter.evaluate(n)
-      if(math.floor(percent) % 2 == 0)
+      if(math.floor(percent) % 5 <= 3 && !flag) {
         println("Progress :"+percent.toFloat+"% "+"="*(percent/10).toInt)
+        flag = true
+      } else {
+        flag = false
+      }
       PixelTools.argb(vals_argb(0),
         vals_argb(1),
         vals_argb(2),
         vals_argb(3))
     })
   }
+
+  def subsample(image: Image, scale: Double = 0.5): Image =
+    image.fit((image.width*scale).toInt,
+      (image.height*scale).toInt,
+      color = Color.Black,
+      scaleMethod = ScaleMethod.Bicubic)
 
   def alpha(image: RDD[((Long, Long), Array[Int])]) =
     image.map{pixel => (pixel._1, pixel._2(0))}

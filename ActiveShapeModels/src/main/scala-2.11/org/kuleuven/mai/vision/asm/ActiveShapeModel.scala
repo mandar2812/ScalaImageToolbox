@@ -102,15 +102,20 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
   def fit(vector: DenseVector[Double])
   :(DenseVector[Double], DenseMatrix[Double],
     Double, DenseVector[Double]) = {
-    val scale = norm(vector, 2)
+
     val (centered_vector, vector_centroid) = ActiveShapeModel.centerLandmarks(vector)
+
+    val scale = norm(centered_vector, 2)
     val norm_vector = ActiveShapeModel.scaleLandmarks(centered_vector)
+
     var x = this.meanShape
     var b = DenseVector.fill(x.length)(0.0)
+
     val translation = DenseVector.vertcat(
-      DenseVector.fill(x.length/2)(vector_centroid(0)),
-      DenseVector.fill(x.length/2)(vector_centroid(1))
+      DenseVector.fill(x.length/2)(-1*vector_centroid(0)),
+      DenseVector.fill(x.length/2)(-1*vector_centroid(1))
     )
+
     var y = vector
     val rotation = ActiveShapeModel.alignShapes(norm_vector) _
     val eigenvectors = this.decomposeShape()

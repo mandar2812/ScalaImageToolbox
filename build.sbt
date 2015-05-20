@@ -57,15 +57,15 @@ val platform = {
 
 libraryDependencies in ThisBuild ++= Seq(
   "org.scalanlp" %% "breeze" % breezeVersion,
-  "org.scalanlp" %% "breeze-natives" % breezeVersion,
+  //"org.scalanlp" %% "breeze-natives" % breezeVersion,
   "com.github.tototoshi" %% "scala-csv" % "1.2.1",
   "org.apache.logging.log4j" % "log4j-core" % "2.2",
   "org.apache.spark" %% "spark-core" % "1.3.1",
   "org.apache.spark" %% "spark-mllib" % "1.3.1",
-  "org.bytedeco"                 % "javacpp" % javacppVersion,
+  /*"org.bytedeco"                 % "javacpp" % javacppVersion,
   "org.bytedeco"                 % "javacv" % javacppVersion,
   "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier "",
-  "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier platform,
+  "org.bytedeco.javacpp-presets" % "opencv" % ("2.4.11-" + javacppVersion) classifier platform,*/
   "xerces" % "xercesImpl" % "2.8.1",
   "com.sksamuel.scrimage" %% "scrimage-core" % "1.4.2",
   "com.sksamuel.scrimage" %% "scrimage-canvas" % "1.4.2",
