@@ -3,7 +3,6 @@ package org.kuleuven.mai.vision.image
 import java.io.File
 import java.util.Calendar
 
-import com.sksamuel.scrimage.AsyncImage
 import com.sksamuel.scrimage.Format.PNG
 import com.sksamuel.scrimage.io.TiffReader
 import org.apache.commons.io.FileUtils
@@ -29,10 +28,11 @@ object SmoothRadiograms {
       val filename = if(i < 10) "0"+i+".tif" else i+".tif"
       var image = TiffReader.read(FileUtils.openInputStream(new File(dataRoot+filename)))
       (1 to num_levels).foreach{level =>
-        println("Applying filter for level: "+level)
+        val effectiveWindow = math.max(1, window + 1 - level)
+        println("Applying filter for level: "+level+" kernel window: "+effectiveWindow)
         val new_image = method match {
-          case "classic" => ImageMatrix.applyFilter(image, new MedianFilter(), window)
-          case "histo"=> ImageMatrix.applyFilterhisto(image, window)
+          case "classic" => ImageMatrix.applyFilter(image, new MedianFilter(), effectiveWindow)
+          case "histo"=> ImageMatrix.applyFilterhisto(image, effectiveWindow)
         }
         val scaled_image = ImageMatrix.subsample(new_image)
         scaled_image.write(destinationDir+i+"_level_"+level+".png", PNG)
