@@ -75,12 +75,14 @@ object ImageMatrix {
                   r: Int): Image = {
     val neighborhoodFunction = ImageMatrix.neighbourhood(image)(r) _
     var flag = false
+    var prev = 0.0
     image.map((x,y,pixel) => {
       val n = neighborhoodFunction(x,y)
       val percent = 100.0*x.toFloat/image.width
       val vals_argb = filter.evaluate(n)
-      if(math.floor(percent) % 5 < 1 && !flag) {
+      if(math.floor(percent) % 5 < 1 && !flag && percent - prev > 1.0) {
         println("Progress :"+percent.toFloat+"% "+"="*(percent/10).toInt)
+        prev = percent
         flag = true
       } else {
         flag = false
