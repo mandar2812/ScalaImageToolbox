@@ -3,6 +3,9 @@ package org.kuleuven.mai.vision.asm
 import java.io.File
 
 import breeze.linalg._
+import com.sksamuel.scrimage.PixelTools
+import com.sksamuel.scrimage.io.TiffReader
+import org.apache.commons.io.FileUtils
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution
 import org.kuleuven.mai.vision.utils
 
@@ -11,7 +14,7 @@ import scala.collection.mutable.{MutableList => ML}
 /**
  * @author mandar2812
  */
-class ActiveShapeModel(shapes: List[DenseVector[Double]]){
+class ActiveShapeModel(shapes: List[DenseVector[Double]], pixelgrad: List[List[DenseVector[Double]]]){
 
   private var EPSILON: Double = 0.0001
 
@@ -28,12 +31,20 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
   private val (data, scales, centroids) = process(shapes)
 
+  private val pixel_structure: List[(DenseVector[Double], DenseMatrix[Double])] =
+    pixelgrad.map{utils.getStats _}
+
   private val dims = shapes.head.length
 
   private var SHAPE_DENSITY_THRESHOLD = 0.5*math.pow(2*math.Pi, -1*dims/2)
 
   def setTolerance(e: Double): this.type = {
     this.EPSILON = e
+    this
+  }
+
+  def setMaxIterations(i: Int): this.type = {
+    this.MAX_ITERATIONS = i
     this
   }
 
@@ -87,8 +98,8 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
   def pca(components: Int = this.data.head.length): DenseMatrix[Double] = {
     val dataMat = this.getNormalizedShapesAsMatrix
     val d = zeroMean(dataMat)
-    val decomp = svd(d)
-    val v = decomp.Vt
+    val decomposition = svd(d)
+    val v = decomposition.Vt
     val model = v(0 until components/2, ::) //top 'components' eigenvectors
     val ymodel = v(40 until 40+(components/2), ::)
     DenseMatrix.vertcat(model, ymodel).t
@@ -183,9 +194,54 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]]){
 
 object ActiveShapeModel {
 
-  def apply(shapes: List[DenseVector[Double]], images: Array[File]): ActiveShapeModel = {
+  def apply(shapes: List[DenseVector[Double]],
+            images: Array[File],
+            k: Int = 5): ActiveShapeModel = {
 
-    new ActiveShapeModel(shapes)
+    val pixelgradients:ML[List[DenseVector[Double]]] =
+      ML.fill(shapes.head.length/2)(List())
+
+    images.foreach(file =>{
+      val image_num = file.getName.filter(!".tif".contains(_)).toInt - 1
+      val image = TiffReader.read(FileUtils.openInputStream(file))
+      val v = shapes(image_num)
+      val landmarks = List.tabulate(shapes.head.length/2){k =>
+        (v(k), v(k + shapes.head.length/2))
+      }
+
+      val slopes = landmarks.sliding(2).map((points) => {
+        if(points(1)._2 != points.head._2) {
+          -1*(points(1)._1 - points.head._1)/(points(1)._2 - points.head._2)
+        } else {
+          Double.PositiveInfinity
+        }
+      }).toList
+
+      (0 until shapes.head.length/2).foreach(model_point => {
+        //find out the normalized gradient vector for the ith landmark
+        //append it to pixelgradients(i)
+
+        //to calculate the gradient, first calculate the
+        //normal to the shape profile and sample pixels lying
+        //on it (approximately)
+        val (x, y) = (landmarks(model_point)._1, landmarks(model_point)._2)
+
+        val center_point = DenseVector(x,y)
+        val m = slopes(math.min(model_point, slopes.length-1))
+        val slopevec = if(m < Double.PositiveInfinity) DenseVector(1.0, m) else DenseVector(0.0, 1.0)
+        val gradients: DenseVector[Double] = DenseVector(List.tabulate(2*k+1){l =>
+          val point: DenseVector[Double] = center_point + slopevec*(l-k).toDouble
+
+          PixelTools.gray(image.pixel(point(0).toInt, point(1).toInt)).toDouble
+        }.sliding(2).toList.map(p => p(1) - p.head).toArray)
+
+        val norm_gradients: DenseVector[Double] = gradients / norm(gradients, 2)
+
+        pixelgradients(model_point) ++= List(norm_gradients)
+      })
+    })
+
+    new ActiveShapeModel(shapes, pixelgradients.toList)
   }
 
   def centerLandmarks(vector: DenseVector[Double]):

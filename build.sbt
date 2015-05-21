@@ -69,7 +69,8 @@ libraryDependencies in ThisBuild ++= Seq(
   "xerces" % "xercesImpl" % "2.8.1",
   "com.sksamuel.scrimage" %% "scrimage-core" % "1.4.2",
   "com.sksamuel.scrimage" %% "scrimage-canvas" % "1.4.2",
-  "com.sksamuel.scrimage" %% "scrimage-filters" % "1.4.2"
+  "com.sksamuel.scrimage" %% "scrimage-filters" % "1.4.2",
+  "org.scalaz" %% "scalaz-core" % "7.1.2"
 )
 
 resolvers ++= Seq(

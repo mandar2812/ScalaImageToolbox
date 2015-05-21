@@ -39,7 +39,7 @@ object IncisorsAlign {
       .listFiles
       .filter(_.getName.endsWith(".tif"))
 
-    val models = landmarksByTooth.map(i => ActiveShapeModel(i, image_files))
+    val models = landmarksByTooth.map(i => ActiveShapeModel(i, image_files, 5))
 
     println("Number of teeth: "+models.length)
     println("Number of points for each tooth: "+
