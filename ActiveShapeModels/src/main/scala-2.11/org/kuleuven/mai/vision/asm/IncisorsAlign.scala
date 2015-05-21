@@ -14,10 +14,9 @@ object IncisorsAlign {
     //Load the landmarks for all 14 images
     //for every image, load the landmarks of
     //each incisor in a list
-
-    val landmarks: List[List[DenseVector[Double]]] = List.tabulate(14){i =>
-      List.tabulate(8){j =>
-        val file = dataRoot+"landmarks"+(i+1)+"-"+(j+1)+".txt"
+    val landmarks: List[(Int, List[DenseVector[Double]])] = (0 until 14).map{i =>
+      (i, List.tabulate(8){j =>
+        val file = dataRoot+"landmarks"+i+"-"+(j+1)+".txt"
         val points = Array.fill(80)(0.0)
         val reader = CSVReader.open(new File(file))
         val it = reader.iterator
@@ -28,11 +27,11 @@ object IncisorsAlign {
         }
         reader.close()
         DenseVector(points)
-      }
-    }
+      })
+    }.toList
 
     val landmarksByTooth = List.tabulate(8){tooth =>
-      landmarks.map{_(tooth)}
+      landmarks.map{couple => (couple._1, couple._2(tooth))}.toMap
     }
 
     val image_files = new java.io.File(imageRoot)

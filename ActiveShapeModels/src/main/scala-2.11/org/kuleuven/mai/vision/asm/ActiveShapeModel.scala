@@ -32,7 +32,7 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]], pixelgrad: List[List[D
   private val (data, scales, centroids) = process(shapes)
 
   private val pixel_structure: List[(DenseVector[Double], DenseMatrix[Double])] =
-    pixelgrad.map{utils.getStats _}
+    pixelgrad map utils.getStats
 
   private val dims = shapes.head.length
 
@@ -194,19 +194,19 @@ class ActiveShapeModel(shapes: List[DenseVector[Double]], pixelgrad: List[List[D
 
 object ActiveShapeModel {
 
-  def apply(shapes: List[DenseVector[Double]],
+  def apply(shapes: Map[Int, DenseVector[Double]],
             images: Array[File],
             k: Int = 5): ActiveShapeModel = {
 
     val pixelgradients:ML[List[DenseVector[Double]]] =
-      ML.fill(shapes.head.length/2)(List())
-
-    images.foreach(file =>{
-      val image_num = file.getName.filter(!".tif".contains(_)).toInt - 1
+      ML.fill(shapes.toList.head._2.length/2)(List())
+    images.sortBy(f => f.getName.filter(!".tif".contains(_)).toInt).foreach(file =>{
+      val image_num = file.getName.filter(!".tif".contains(_)).toInt
       val image = TiffReader.read(FileUtils.openInputStream(file))
+
       val v = shapes(image_num)
-      val landmarks = List.tabulate(shapes.head.length/2){k =>
-        (v(k), v(k + shapes.head.length/2))
+      val landmarks = List.tabulate(shapes.toList.head._2.length/2){k =>
+        (v(k), v(k + shapes.toList.head._2.length/2))
       }
 
       val slopes = landmarks.sliding(2).map((points) => {
@@ -217,7 +217,7 @@ object ActiveShapeModel {
         }
       }).toList
 
-      (0 until shapes.head.length/2).foreach(model_point => {
+      (0 until shapes.toList.head._2.length/2).foreach(model_point => {
         //find out the normalized gradient vector for the ith landmark
         //append it to pixelgradients(i)
 
@@ -241,7 +241,7 @@ object ActiveShapeModel {
       })
     })
 
-    new ActiveShapeModel(shapes, pixelgradients.toList)
+    new ActiveShapeModel(shapes.toList.sortBy(_._1).map(_._2), pixelgradients.toList)
   }
 
   def centerLandmarks(vector: DenseVector[Double]):
