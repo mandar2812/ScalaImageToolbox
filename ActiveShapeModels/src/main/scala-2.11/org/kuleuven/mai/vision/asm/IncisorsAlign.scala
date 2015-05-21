@@ -14,7 +14,7 @@ object IncisorsAlign {
     //Load the landmarks for all 14 images
     //for every image, load the landmarks of
     //each incisor in a list
-    val landmarks: List[(Int, List[DenseVector[Double]])] = (0 until 14).map{i =>
+    val landmarks: List[(Int, List[DenseVector[Double]])] = (1 to 14).map{i =>
       (i, List.tabulate(8){j =>
         val file = dataRoot+"landmarks"+i+"-"+(j+1)+".txt"
         val points = Array.fill(80)(0.0)

@@ -40,8 +40,6 @@ object EvaluateASM {
       val testimagestr = if(fold < 10) "0"+fold+".tif" else fold+".tif"
       val training_indices = (1 to folds).filter(_ != fold)
       val training_images = image_files.filter(_.getName != testimagestr)
-      println(training_images.map(_.getName.filter(!".tif".contains(_))).map(_.toInt).toList.sorted)
-      println(training_indices.toList)
       println("Fold: "+fold+" Training Images: "+training_images.length)
 
       val landmarks: List[(Int, List[DenseVector[Double]])] = training_indices.map{i =>
