@@ -35,6 +35,10 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
 
   private val dims = shapes.toList.head._2.length
 
+  private val asPoints = ActiveShapeModel.landmarksAsPoints _
+
+  private val slopesOfNormals = ActiveShapeModel.calculateNormalSlopes _
+
   private var SHAPE_DENSITY_THRESHOLD = 0.5*math.pow(2*math.Pi, -1*dims/2)
 
   def setTolerance(e: Double): this.type = {
@@ -196,11 +200,10 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
   }
 
   def pixelStructure(level: Int)
-  : List[(DenseVector[Double], DenseMatrix[Double])] = {
-    val pixelgradients:ML[List[DenseVector[Double]]] =
-      ML.fill(dims/2)(List())
+  : List[(DenseVector[Double], DenseMatrix[Double])] = images(level).map(file =>{
 
-    images(level).foreach(file =>{
+      val adjust = ActiveShapeModel.adjustPointforLevel(level) _
+
       val image_num = if(level == 0) {
         file.getName.replaceAll(".tiff", "").toInt
       } else {
@@ -211,21 +214,20 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
       else Image(FileUtils.openInputStream(file))
 
       val v = shapes(image_num)
-      val landmarks = ActiveShapeModel.landmarksAsPoints(v)
+      val landmarks = asPoints(v)
+      val slopes = slopesOfNormals(landmarks)
 
-      val slopes = ActiveShapeModel.calculateNormalSlopes(landmarks)
-
-      (0 until dims/2).foreach(model_point => {
+      landmarks zip slopes map(model_point => {
         //find out the normalized gradient vector for the ith landmark
         //append it to pixelgradients(i)
 
         //to calculate the gradient, first calculate the
         //normal to the shape profile and sample pixels lying
         //on it (approximately)
-        val (x, y) = (landmarks(model_point)._1/math.pow(2, level), landmarks(model_point)._2/math.pow(2, level))
+        val (x, y) = adjust(model_point._1)
 
         val center_point = DenseVector(x,y)
-        val m = slopes(math.min(model_point, slopes.length-1))
+        val m = model_point._2
         val slopevec = if(m < Double.PositiveInfinity) DenseVector(1.0, m) else DenseVector(0.0, 1.0)
         val gradients: DenseVector[Double] = DenseVector(List.tabulate(2*pixel_window+1){l =>
           val point: DenseVector[Double] = center_point + slopevec*(l-pixel_window).toDouble
@@ -235,11 +237,11 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
 
         val norm_gradients: DenseVector[Double] = gradients / norm(gradients, 2)
 
-        pixelgradients(model_point) ++= List(norm_gradients)
+        List(norm_gradients)
       })
-    })
-    pixelgradients.toList map utils.getStats
-  }
+    }).reduce((l1, l2) => {
+        (l1 zip l2) map (c => c._1 ++ c._2)
+      }) map utils.getStats
 
   def MultiResolutionSearch(radiogram_levels: List[File]): Unit = {
     val levels = radiogram_levels.length
@@ -260,18 +262,24 @@ object ActiveShapeModel {
       images, k)
   }
 
+  def adjustPointforLevel(l: Int = 0)(p: (Double, Double)) =
+    (p._1/math.pow(2, l), p._2/math.pow(2, l))
+
   def landmarksAsPoints(v: DenseVector[Double]) = List.tabulate(v.length/2){k =>
     (v(k), v(k + v.length/2))
   }
 
-  def calculateNormalSlopes(landmarks: List[(Double, Double)]) =
-    landmarks.sliding(2).map((points) => {
-    if(points(1)._2 != points.head._2) {
-      -1*(points(1)._1 - points.head._1)/(points(1)._2 - points.head._2)
-    } else {
-      Double.PositiveInfinity
-    }
-  }).toList
+  def calculateNormalSlopes(landmarks: List[(Double, Double)]) = {
+    val slopes = landmarks.sliding(2).map((points) => {
+      if(points(1)._2 != points.head._2) {
+        -1*(points(1)._1 - points.head._1)/(points(1)._2 - points.head._2)
+      } else {
+        Double.PositiveInfinity
+      }
+    }).toList
+
+    slopes ::: List(slopes.last)
+  }
 
   def centerLandmarks(vector: DenseVector[Double]):
   (DenseVector[Double], DenseVector[Double]) = {
