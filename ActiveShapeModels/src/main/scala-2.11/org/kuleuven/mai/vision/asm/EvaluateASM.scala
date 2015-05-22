@@ -2,10 +2,8 @@ package org.kuleuven.mai.vision.asm
 
 import java.io.File
 
-import breeze.linalg.DenseVector
+import breeze.linalg.{inv, norm, det, DenseVector}
 import com.github.tototoshi.csv.CSVReader
-
-import scala.collection.immutable.HashMap
 
 /**
  * @author mandar2812
@@ -47,9 +45,9 @@ object EvaluateASM {
       val training_images = net_images.filter(file => !testImageStr.contains(file.getName))
       val training_indices = (1 to folds).filter(_ != fold)
 
-      println("Fold: "+fold+" Training Images: "+training_images.length)
-      println("Training Images"+training_images.map(_.getName).toList)
-      println("Test Images: "+testImageStr)
+      println("Fold: "+fold/*+" Training Images: "+training_images.length*/)
+      //println("Training Images"+training_images.map(_.getName))
+      //println("Test Images: "+testImageStr)
 
       val imagesByLevels = List.tabulate(levels+1){i =>
         if(i == 0) {
@@ -59,7 +57,7 @@ object EvaluateASM {
         }
       }
 
-      println("\n"+imagesByLevels)
+      //println("\n"+imagesByLevels)
 
       val landmarks: List[(Int, List[DenseVector[Double]])] = training_indices.map{i =>
         (i, List.tabulate(8){j =>
@@ -85,8 +83,10 @@ object EvaluateASM {
       println("Images for each tooth: "+landmarksByTooth.head.size)
       val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, 5))
       val meanshape = models.head.alignShapes
-      println("Mean Shape \n"+meanshape)
-      println("Pixel Structure: "+models.head.pixelStructure(1))
+      //println("Mean Shape \n"+meanshape)
+      println("Pixel Structure: Inv(Variance) = "+
+        models.head.pixelStructure(3).view.map(x => inv(x._2)).head)
+      println("Pixel Structure norm(mu) = "+models.head.pixelStructure(3).map(x => norm(x._1, 2)).head)
 
       //Evaluate for fold.
 

@@ -53,8 +53,10 @@ object IncisorsAlign {
     //println("Carrying out PCA: ")
     //println(models.head.getNormalizedShapesAsMatrix * models.head.pca(20))
     //println("Number of points: "+models.head.numPoints+"\n")
-    println("Fit for point: \n"+models(1).getRawShapes.head)
-    println("Params: \n"+models.head.fit(models(1).getRawShapes.head))
+    val level = args(0).toInt
+    val testpoint: DenseVector[Double] = models(1).getRawShapes.head / math.pow(2, level)
+    println("Fit for point: \n"+testpoint)
+    println("Params: \n"+models.head.fit(testpoint))
     //val recon = models.head.reconstructData().head
     //println("Reconstructed Data: "+recon)
     //println("Dims: "+recon.length)
