@@ -19,7 +19,7 @@ object EvaluateASM {
 
     val dataRoot = "data/Landmarks/original/"
     val imageRoot = "data/Radiographs/"
-
+    val levels = args(0).toInt
     /*
      * First copy the original images into the data/processed directory
      * Then for each fold i, calculate the image indexes for training
@@ -28,19 +28,38 @@ object EvaluateASM {
      * For each fold i, train a List of 8 Active shape models
      * one for each incisor. Use the code from IncisorsAlign.
      */
-
+    //Get the original image files
     val image_files = new java.io.File(imageRoot)
       .listFiles
-      .filter(_.getName.endsWith(".tif"))
+      .filter(_.getName.endsWith(".tif")).toList
+    //Get the processed multilevel image files
+    val more_image_files = new java.io.File(imageRoot+"processed/")
+      .listFiles
+      .filter(_.getName.endsWith(".png")).toList
 
+    val net_images = image_files ::: more_image_files
     val folds = image_files.length
 
-    (1 to 1).foreach{fold =>
+    (1 to folds).foreach{fold =>
       //for this fold calculate the training and test split
       val testimagestr = if(fold < 10) "0"+fold+".tif" else fold+".tif"
+      val testImageStr = List(testimagestr) ::: (1 to levels).map{level => fold+"_level_"+level+".png"}.toList
+      val training_images = net_images.filter(file => !testImageStr.contains(file.getName))
       val training_indices = (1 to folds).filter(_ != fold)
-      val training_images = image_files.filter(_.getName != testimagestr)
+
       println("Fold: "+fold+" Training Images: "+training_images.length)
+      println("Training Images"+training_images.map(_.getName).toList)
+      println("Test Images: "+testImageStr)
+
+      val imagesByLevels = List.tabulate(levels+1){i =>
+        if(i == 0) {
+          image_files.filter(_.getName != testimagestr)
+        } else {
+          training_images.filter(file => file.getName.contains("_level_"+i+".png"))
+        }
+      }
+
+      println("\n"+imagesByLevels)
 
       val landmarks: List[(Int, List[DenseVector[Double]])] = training_indices.map{i =>
         (i, List.tabulate(8){j =>
@@ -64,9 +83,12 @@ object EvaluateASM {
 
 
       println("Images for each tooth: "+landmarksByTooth.head.size)
-      val models = landmarksByTooth.map(i => ActiveShapeModel(i, training_images, 5))
+      val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, 5))
       val meanshape = models.head.alignShapes
       println("Mean Shape \n"+meanshape)
+      println("Pixel Structure: "+models.head.pixelStructure(1))
+
+      //Evaluate for fold.
 
     }
 
