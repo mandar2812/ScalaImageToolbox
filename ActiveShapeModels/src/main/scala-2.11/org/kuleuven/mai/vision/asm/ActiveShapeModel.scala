@@ -41,6 +41,16 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
 
   private val slopesOfNormals = ActiveShapeModel.calculateNormalSlopes _
 
+  private val pixelneighborhood = ActiveShapeModel.generatePixelWindow(pixel_window) _
+
+  private val asSlope = ActiveShapeModel.asSlopeVector _
+
+  private val getImage = ActiveShapeModel.getImage _
+
+  private val covAsArray = ActiveShapeModel.covAsArray _
+
+  private val pixelGradients = ActiveShapeModel.getPixelGradients _
+
   private var SHAPE_DENSITY_THRESHOLD = 0.5*math.pow(2*math.Pi, -1*dims/2)
 
   def setTolerance(e: Double): this.type = {
@@ -189,10 +199,9 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
 
   def CentroidDistribution: MultivariateNormalDistribution = {
     val (mean, covariance) = utils.getStats(this.centroids)
-    new MultivariateNormalDistribution(mean.toArray,
-      Array.tabulate(covariance.rows, covariance.cols){
-        (i,j) => covariance(i,j)
-      })
+    new MultivariateNormalDistribution(
+      mean.toArray,
+      covAsArray(covariance))
   }
 
   def sampleCentroid = {
@@ -205,16 +214,7 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
   : List[(DenseVector[Double], DenseMatrix[Double])] = images(level).map(file =>{
 
       val adjust = ActiveShapeModel.adjustPointforLevel(level) _
-
-      val image_num = if(level == 0) {
-        file.getName.replaceAll(".tiff", "").toInt
-      } else {
-        file.getName.replaceAll("_level_"+level+".png", "").toInt
-      }
-
-      val image = if(level == 0) TiffReader.read(FileUtils.openInputStream(file))
-      else Image(FileUtils.openInputStream(file))
-
+      val (image_num, image) = getImage(level, file)
       val v = shapes(image_num)
       val landmarks = asPoints(v)
       val slopes = slopesOfNormals(landmarks)
@@ -228,14 +228,11 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
         //on it (approximately)
         val (x, y) = adjust(model_point._1)
 
-        val center_point = DenseVector(x,y)
-        val m = model_point._2
-        val slopevec = if(m < Double.PositiveInfinity) DenseVector(1.0, m) else DenseVector(0.0, 1.0)
-        val gradients: DenseVector[Double] = DenseVector(List.tabulate(2*pixel_window+1){l =>
-          val point: DenseVector[Double] = center_point + slopevec*(l-pixel_window).toDouble
-
-          PixelTools.gray(image.pixel(point(0).toInt, point(1).toInt)).toDouble
-        }.sliding(2).toList.map(p => p(1) - p.head).toArray)
+        val gradients: DenseVector[Double] =
+          DenseVector(pixelGradients(
+            pixelneighborhood(DenseVector(x,y),
+              asSlope(model_point._2),
+              image).map(_._2)).toArray)
 
         val norm_gradients: DenseVector[Double] = gradients / norm(gradients, 2)
 
@@ -247,11 +244,28 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
 
   def updateLandmarks(landmarks: DenseVector[Double],
                       level: Int, image: Image,
-                      ns: Int = pixel_window + 5) = {
+                      ns: Int = pixel_window + 5,
+                      pixelStruct: List[(DenseVector[Double],
+                        DenseMatrix[Double])]) = {
     val points = asPoints(landmarks)
     val slopes = slopesOfNormals(points)
-    val newlandmarks = asLandmarks(points.zip(slopes).map((couple) => {
-      couple._1
+    val newlandmarks = asLandmarks(points.zip(slopes).zip(pixelStruct).map((triple) => {
+      val center_point = DenseVector(triple._1._1._1, triple._1._1._2)
+      val n = pixelneighborhood(center_point, asSlope(triple._1._2), image)
+      val(mean, covariance) = triple._2
+
+      val new_point = n.sliding(pixel_window).reduce((window1, window2) => {
+        val grad1 = scale(DenseVector(pixelGradients(window1.map(_._2)).toArray))._1
+        val grad2 = scale(DenseVector(pixelGradients(window2.map(_._2)).toArray))._1
+        grad1 :-= mean
+        grad2 :-= mean
+
+        val p1 = grad1.t*(inv(covariance)*grad1)
+        val p2 = grad2.t*(inv(covariance)*grad2)
+        val ans = if(p1 < p2) window1 else window2
+        ans
+      }).map(_._1).reduce(_+_)
+      (new_point(0)/pixel_window, new_point(1)/pixel_window)
     }))
     (newlandmarks, norm(newlandmarks - landmarks, 2)/norm(landmarks, 2))
   }
@@ -274,6 +288,40 @@ object ActiveShapeModel {
       shapes,
       images, k)
   }
+
+  def getPixelGradients(p: List[Double]) = p.sliding(2)
+    .toList
+    .map(p =>
+    p(1) - p.head)
+
+  def covAsArray(covariance: DenseMatrix[Double]) =
+    Array.tabulate(covariance.rows, covariance.cols){
+    (i,j) => covariance(i,j)
+  }
+
+  def asSlopeVector(m: Double) = if(m < Double.PositiveInfinity)
+    DenseVector(1.0, m) else DenseVector(0.0, 1.0)
+
+  def getImage(level: Int, file: File) = {
+    val image_num = if(level == 0) {
+      file.getName.replaceAll(".tiff", "").toInt
+    } else {
+      file.getName.replaceAll("_level_"+level+".png", "").toInt
+    }
+
+    val image = if(level == 0) TiffReader.read(FileUtils.openInputStream(file))
+    else Image(FileUtils.openInputStream(file))
+    (image_num, image)
+  }
+
+  def generatePixelWindow(pixel_window: Int)
+                         (center_point: DenseVector[Double],
+                          slopevec: DenseVector[Double],
+                          image: Image) =
+    List.tabulate(2*pixel_window+1){l =>
+      val point: DenseVector[Double] = center_point + slopevec*(l-pixel_window).toDouble
+      (point, PixelTools.gray(image.pixel(point(0).toInt, point(1).toInt)).toDouble)
+    }
 
   def adjustPointforLevel(l: Int = 0)(p: (Double, Double)) =
     (p._1/math.pow(2, l), p._2/math.pow(2, l))
