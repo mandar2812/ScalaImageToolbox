@@ -37,6 +37,8 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
 
   private val asPoints = ActiveShapeModel.landmarksAsPoints _
 
+  private val asLandmarks = ActiveShapeModel.pointsAsLandmarks _
+
   private val slopesOfNormals = ActiveShapeModel.calculateNormalSlopes _
 
   private var SHAPE_DENSITY_THRESHOLD = 0.5*math.pow(2*math.Pi, -1*dims/2)
@@ -243,6 +245,17 @@ class ActiveShapeModel(shapes: Map[Int, DenseVector[Double]],
         (l1 zip l2) map (c => c._1 ++ c._2)
       }) map utils.getStats
 
+  def updateLandmarks(landmarks: DenseVector[Double],
+                      level: Int, image: Image,
+                      ns: Int = pixel_window + 5) = {
+    val points = asPoints(landmarks)
+    val slopes = slopesOfNormals(points)
+    val newlandmarks = asLandmarks(points.zip(slopes).map((couple) => {
+      couple._1
+    }))
+    (newlandmarks, norm(newlandmarks - landmarks, 2)/norm(landmarks, 2))
+  }
+
   def MultiResolutionSearch(radiogram_levels: List[File]): Unit = {
     val levels = radiogram_levels.length
 
@@ -268,6 +281,11 @@ object ActiveShapeModel {
   def landmarksAsPoints(v: DenseVector[Double]) = List.tabulate(v.length/2){k =>
     (v(k), v(k + v.length/2))
   }
+
+  def pointsAsLandmarks(v: List[(Double, Double)]): DenseVector[Double] =
+    DenseVector.vertcat(
+    DenseVector(v.map(_._1).toArray),
+    DenseVector(v.map(_._2).toArray))
 
   def calculateNormalSlopes(landmarks: List[(Double, Double)]) = {
     val slopes = landmarks.sliding(2).map((points) => {
