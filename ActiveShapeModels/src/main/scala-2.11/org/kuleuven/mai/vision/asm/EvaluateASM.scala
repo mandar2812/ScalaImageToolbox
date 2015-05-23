@@ -18,6 +18,9 @@ object EvaluateASM {
     val dataRoot = "data/Landmarks/original/"
     val imageRoot = "data/Radiographs/"
     val levels = args(0).toInt
+    val ns = args(1).toInt
+    val k = args(2).toInt
+    var net_error = 0.0
     /*
      * First copy the original images into the data/processed directory
      * Then for each fold i, calculate the image indexes for training
@@ -42,13 +45,22 @@ object EvaluateASM {
       //for this fold calculate the training and test split
       val testimagestr = if(fold < 10) "0"+fold+".tif" else fold+".tif"
       val testImageStr = List(testimagestr) ::: (1 to levels).map{level => fold+"_level_"+level+".png"}.toList
+
       val training_images = net_images.filter(file => !testImageStr.contains(file.getName))
       val training_indices = (1 to folds).filter(_ != fold)
 
-      println("Fold: "+fold/*+" Training Images: "+training_images.length*/)
-      //println("Training Images"+training_images.map(_.getName))
-      //println("Test Images: "+testImageStr)
+      val test_images = (0 to levels).map(l =>{
+          val name = if(l == 0) {
+            if(fold < 10) "0"+fold+".tif" else fold+".tif"
+          } else {
+            fold+"_level_"+l+".png"
+          }
+        (l, net_images.filter(_.getName == name).head)
+      }).toMap
 
+      val test_landmarks = List.tabulate(8){j =>readLandmarks(dataRoot+"landmarks"+fold+"-"+(j+1)+".txt")}
+
+      println("Fold: "+fold)
       val imagesByLevels = List.tabulate(levels+1){i =>
         if(i == 0) {
           image_files.filter(_.getName != testimagestr)
@@ -57,21 +69,9 @@ object EvaluateASM {
         }
       }
 
-      //println("\n"+imagesByLevels)
-
       val landmarks: List[(Int, List[DenseVector[Double]])] = training_indices.map{i =>
         (i, List.tabulate(8){j =>
-          val file = dataRoot+"landmarks"+i+"-"+(j+1)+".txt"
-          val points = Array.fill(80)(0.0)
-          val reader = CSVReader.open(new File(file))
-          val it = reader.iterator
-
-          (1 to 40).foreach{point =>
-            points.update(point-1, it.next().head.toDouble)
-            points.update(point+39, it.next().head.toDouble)
-          }
-          reader.close()
-          DenseVector(points)
+          readLandmarks(dataRoot+"landmarks"+i+"-"+(j+1)+".txt")
         })
       }.toList
 
@@ -81,16 +81,26 @@ object EvaluateASM {
 
 
       println("Images for each tooth: "+landmarksByTooth.head.size)
-      val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, 5))
+      val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, k))
       val meanshape = models.head.alignShapes
-      //println("Mean Shape \n"+meanshape)
-      println("Pixel Structure: Inv(Variance) = "+
-        models.head.pixelStructure(3).view.map(x => inv(x._2)).head)
-      println("Pixel Structure norm(mu) = "+models.head.pixelStructure(3).map(x => norm(x._1, 2)).head)
-
       //Evaluate for fold.
-
+      val result = models.head.MultiResolutionSearch(test_images, ns, 40, test_landmarks.head)
+      println("Error of fit: "+result._2+"\n\n")
+      net_error += result._2
     }
+    println("Final Result ...\n"+"Net Error: "+100.0*net_error/folds+"%\n")
+  }
 
+  def readLandmarks(file: String): DenseVector[Double] = {
+    val points = Array.fill(80)(0.0)
+    val reader = CSVReader.open(new File(file))
+    val it = reader.iterator
+
+    (1 to 40).foreach{point =>
+      points.update(point-1, it.next().head.toDouble)
+      points.update(point+39, it.next().head.toDouble)
+    }
+    reader.close()
+    DenseVector(points)
   }
 }

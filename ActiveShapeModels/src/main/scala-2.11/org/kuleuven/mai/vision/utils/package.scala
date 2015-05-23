@@ -26,7 +26,12 @@ package object utils {
                     s: DenseMatrix[Double],
                     i: Int):
     (DenseVector[Double], DenseMatrix[Double]) = d match {
-      case Nil => (m/i.toDouble, (s:/=i.toDouble).-(m*m.t/(i*i.toDouble)))
+      case Nil => {
+        m :/= i.toDouble
+        s :/= i.toDouble
+        val m1: DenseVector[Double] = m/i.toDouble
+        (m, s - (m1*m1.t))
+      }
       case x :: rest => {
         getStatsRec(rest, m + x,
           s + x*x.t,
