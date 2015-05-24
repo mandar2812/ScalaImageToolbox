@@ -92,7 +92,7 @@ object EvaluateASM {
       println("Error of fit: "+result+"\n\n")
       net_error :+= result
     }
-    net_error :/= 100.0*folds.toDouble
+    net_error :/= (0.01*folds.toDouble)
     println("Final Result ...\n"+"Net Error (vector of percentages): "+net_error+"\n")
   }
 
