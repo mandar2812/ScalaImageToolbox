@@ -20,7 +20,7 @@ object EvaluateASM {
     val levels = args(0).toInt
     val ns = args(1).toInt
     val k = args(2).toInt
-    var net_error = 0.0
+    val net_error = DenseVector.zeros[Double](8)
     /*
      * First copy the original images into the data/processed directory
      * Then for each fold i, calculate the image indexes for training
@@ -43,10 +43,10 @@ object EvaluateASM {
 
     (1 to folds).foreach{fold =>
       //for this fold calculate the training and test split
-      val testimagestr = if(fold < 10) "0"+fold+".tif" else fold+".tif"
-      val testImageStr = List(testimagestr) ::: (1 to levels).map{level => fold+"_level_"+level+".png"}.toList
+      val testimagebasic = if(fold < 10) "0"+fold+".tif" else fold+".tif"
+      val testImageNames = List(testimagebasic) ::: (1 to levels).map{level => fold+"_level_"+level+".png"}.toList
 
-      val training_images = net_images.filter(file => !testImageStr.contains(file.getName))
+      val training_images = net_images.filter(file => !testImageNames.contains(file.getName))
       val training_indices = (1 to folds).filter(_ != fold)
 
       val test_images = (0 to levels).map(l =>{
@@ -63,7 +63,7 @@ object EvaluateASM {
       println("Fold: "+fold)
       val imagesByLevels = List.tabulate(levels+1){i =>
         if(i == 0) {
-          image_files.filter(_.getName != testimagestr)
+          image_files.filter(_.getName != testimagebasic)
         } else {
           training_images.filter(file => file.getName.contains("_level_"+i+".png"))
         }
@@ -84,11 +84,16 @@ object EvaluateASM {
       val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, k))
       val meanshape = models.head.alignShapes
       //Evaluate for fold.
-      val result = models.head.MultiResolutionSearch(test_images, ns, 40, test_landmarks.head)
-      println("Error of fit: "+result._2+"\n\n")
-      net_error += result._2
+      val result = DenseVector.tabulate[Double](8)((tooth) => {
+        println("\nPerforming Multi-Resolution search for tooth: "+tooth+"\n")
+        models(tooth).MultiResolutionSearch(test_images, ns, 40, test_landmarks(tooth))._2
+      })
+
+      println("Error of fit: "+result+"\n\n")
+      net_error :+= result
     }
-    println("Final Result ...\n"+"Net Error: "+100.0*net_error/folds+"%\n")
+    net_error :/= 100.0*folds.toDouble
+    println("Final Result ...\n"+"Net Error (vector of percentages): "+net_error+"\n")
   }
 
   def readLandmarks(file: String): DenseVector[Double] = {

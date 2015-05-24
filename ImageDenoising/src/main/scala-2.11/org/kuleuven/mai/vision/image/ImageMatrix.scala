@@ -82,7 +82,11 @@ object ImageMatrix {
       val vals_argb = filter.evaluate(n)
       if(math.floor(percent) % 5 < 1 && !flag && percent - prev > 1.0) {
         val progress = if(percent.toInt < 10) "0"+percent.toInt else percent.toInt
-        println("Progress : "+progress+"%\t"+"="*(percent/10).toInt)
+        if(percent.toInt % 10 == 0){
+          println("Progress : "+progress+"%\t"+"="*(percent/10).toInt)
+        } else {
+          println("Progress : "+progress+"%")
+        }
         prev = percent
         flag = true
       } else {
