@@ -85,11 +85,11 @@ object EvaluateASM {
       val meanshape = models.head.alignShapes
       //Evaluate for fold.
       val result = DenseVector.tabulate[Double](8)((tooth) => {
-        println("\nPerforming Multi-Resolution search for tooth: "+tooth+"\n")
+        println("\nPerforming Multi-Resolution search for tooth: "+(tooth+1)+"\n")
         models(tooth).MultiResolutionSearch(test_images, ns, 40, test_landmarks(tooth))._2
       })
-
-      println("Error of fit: "+result+"\n\n")
+      val p: DenseVector[Double] = result * 100.0
+      println("Error of fit: "+p+"\n\n")
       net_error :+= result
     }
     net_error :/= (0.01*folds.toDouble)
