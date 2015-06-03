@@ -29,8 +29,8 @@ package object utils {
       case Nil => {
         m :/= i.toDouble
         s :/= i.toDouble
-        val m1: DenseVector[Double] = m/i.toDouble
-        (m, s - (m1*m1.t))
+        //val m1: DenseVector[Double] = m/i.toDouble
+        (m, s - (m*m.t))
       }
       case x :: rest => {
         getStatsRec(rest, m + x,
