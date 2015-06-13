@@ -19,8 +19,6 @@ object EvaluateASM {
 
   def main(args: Array[String]): Unit = {
 
-    val dataRoot = "data/Landmarks/original/"
-    val imageRoot = "data/Radiographs/"
     val levels = args(0).toInt
     val ns = args(1).toInt
     val k = args(2).toInt
@@ -40,7 +38,9 @@ object EvaluateASM {
     DenseVector(points)
   }
 
-  def atKernelBandwidth(searchBandwidth: Int, pixelGradBandwidth: Int, levels: Int): DenseVector[Double] = {
+  def atKernelBandwidth(searchBandwidth: Int,
+                        pixelGradBandwidth: Int,
+                        levels: Int): DenseVector[Double] = {
 
     val ns = searchBandwidth
     val k = pixelGradBandwidth
@@ -68,9 +68,13 @@ object EvaluateASM {
     (1 to folds).foreach{fold =>
       //for this fold calculate the training and test split
       val testimagebasic = if(fold < 10) "0"+fold+".tif" else fold+".tif"
-      val testImageNames = List(testimagebasic) ::: (1 to levels).map{level => fold+"_level_"+level+".png"}.toList
+      val testImageNames = List(testimagebasic) ::: (1 to levels).map(level => {
+        fold+"_level_"+level+".png"
+      }).toList
 
-      val training_images = net_images.filter(file => !testImageNames.contains(file.getName))
+      val training_images = net_images.filter(file =>
+        !testImageNames.contains(file.getName))
+
       val training_indices = (1 to folds).filter(_ != fold)
 
       val test_images = (0 to levels).map(l =>{
@@ -82,14 +86,18 @@ object EvaluateASM {
         (l, net_images.filter(_.getName == name).head)
       }).toMap
 
-      val test_landmarks = List.tabulate(8){j =>readLandmarks(dataRoot+"landmarks"+fold+"-"+(j+1)+".txt")}
+      val test_landmarks = List.tabulate(8){j =>
+        readLandmarks(dataRoot+"landmarks"+fold+"-"+(j+1)+".txt")
+      }
 
       println("Fold: "+fold)
       val imagesByLevels = List.tabulate(levels+1){i =>
         if(i == 0) {
           image_files.filter(_.getName != testimagebasic)
         } else {
-          training_images.filter(file => file.getName.contains("_level_"+i+".png"))
+          training_images.filter(file =>
+            file.getName.contains("_level_"+i+".png")
+          )
         }
       }
 
@@ -108,10 +116,12 @@ object EvaluateASM {
       val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, k))
       val meanshape = models.head.alignShapes
       //Evaluate for fold.
+
       val result = DenseVector.tabulate[Double](8)((tooth) => {
         println("\nPerforming Multi-Resolution search for tooth: "+(tooth+1)+"\n")
         models(tooth).MultiResolutionSearch(test_images, ns, 40, test_landmarks(tooth))._2
       })
+
       val p: DenseVector[Double] = result * 100.0
       println("Error of fit: "+p+"\n\n")
       net_error :+= result
