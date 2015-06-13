@@ -2,7 +2,7 @@ package org.kuleuven.mai.vision.asm
 
 import java.io.File
 
-import breeze.linalg.{inv, norm, det, DenseVector}
+import breeze.linalg.DenseVector
 import com.github.tototoshi.csv.CSVReader
 
 /**
@@ -13,6 +13,10 @@ import com.github.tototoshi.csv.CSVReader
  * data set of 14 radiographs.
  */
 object EvaluateASM {
+
+  val dataRoot = "data/Landmarks/original/"
+  val imageRoot = "data/Radiographs/"
+
   def main(args: Array[String]): Unit = {
 
     val dataRoot = "data/Landmarks/original/"
@@ -20,6 +24,26 @@ object EvaluateASM {
     val levels = args(0).toInt
     val ns = args(1).toInt
     val k = args(2).toInt
+    val net_error = EvaluateASM.atKernelBandwidth(ns, k, levels)
+  }
+
+  def readLandmarks(file: String): DenseVector[Double] = {
+    val points = Array.fill(80)(0.0)
+    val reader = CSVReader.open(new File(file))
+    val it = reader.iterator
+
+    (1 to 40).foreach{point =>
+      points.update(point-1, it.next().head.toDouble)
+      points.update(point+39, it.next().head.toDouble)
+    }
+    reader.close()
+    DenseVector(points)
+  }
+
+  def atKernelBandwidth(searchBandwidth: Int, pixelGradBandwidth: Int, levels: Int): DenseVector[Double] = {
+
+    val ns = searchBandwidth
+    val k = pixelGradBandwidth
     val net_error = DenseVector.zeros[Double](8)
     /*
      * First copy the original images into the data/processed directory
@@ -50,11 +74,11 @@ object EvaluateASM {
       val training_indices = (1 to folds).filter(_ != fold)
 
       val test_images = (0 to levels).map(l =>{
-          val name = if(l == 0) {
-            if(fold < 10) "0"+fold+".tif" else fold+".tif"
-          } else {
-            fold+"_level_"+l+".png"
-          }
+        val name = if(l == 0) {
+          if(fold < 10) "0"+fold+".tif" else fold+".tif"
+        } else {
+          fold+"_level_"+l+".png"
+        }
         (l, net_images.filter(_.getName == name).head)
       }).toMap
 
@@ -94,18 +118,6 @@ object EvaluateASM {
     }
     net_error :/= (0.01*folds.toDouble)
     println("Final Result ...\n"+"Net Error (vector of percentages): "+net_error+"\n")
-  }
-
-  def readLandmarks(file: String): DenseVector[Double] = {
-    val points = Array.fill(80)(0.0)
-    val reader = CSVReader.open(new File(file))
-    val it = reader.iterator
-
-    (1 to 40).foreach{point =>
-      points.update(point-1, it.next().head.toDouble)
-      points.update(point+39, it.next().head.toDouble)
-    }
-    reader.close()
-    DenseVector(points)
+    net_error
   }
 }
