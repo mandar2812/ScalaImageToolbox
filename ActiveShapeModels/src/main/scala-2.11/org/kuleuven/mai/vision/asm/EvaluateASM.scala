@@ -3,7 +3,7 @@ package org.kuleuven.mai.vision.asm
 import java.io.File
 
 import breeze.linalg.DenseVector
-import com.github.tototoshi.csv.CSVReader
+import com.github.tototoshi.csv.{CSVWriter, CSVReader}
 
 /**
  * @author mandar2812
@@ -20,9 +20,19 @@ object EvaluateASM {
   def main(args: Array[String]): Unit = {
 
     val levels = args(0).toInt
-    val ns = args(1).toInt
-    val k = args(2).toInt
-    val net_error = EvaluateASM.atKernelBandwidth(ns, k, levels)
+    val nsmax = args(1).toInt
+    val kmax = args(2).toInt
+
+    val w = for(k <- 1 to kmax; ns <- 2 to nsmax) yield (ns,k)
+    val writer = CSVWriter.open(new File("data/results.csv"))
+
+    w.foreach((windows) => {
+      val net_error = EvaluateASM.atKernelBandwidth(windows._1,
+        windows._2, levels).toArray.toSeq
+      writer.writeRow(Seq(windows._2, windows._1) ++ net_error)
+    })
+
+    writer.close()
   }
 
   def readLandmarks(file: String): DenseVector[Double] = {

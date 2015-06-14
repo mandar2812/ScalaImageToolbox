@@ -2,3 +2,4 @@ target/
 .idea
 *.sc
 data/Radiographs/processed
+data/results.csv
