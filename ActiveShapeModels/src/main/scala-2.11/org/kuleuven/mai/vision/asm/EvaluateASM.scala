@@ -4,6 +4,8 @@ import java.io.File
 
 import breeze.linalg.DenseVector
 import com.github.tototoshi.csv.{CSVWriter, CSVReader}
+import com.sksamuel.scrimage.Format.PNG
+import com.sksamuel.scrimage.PixelTools
 
 /**
  * @author mandar2812
@@ -23,16 +25,19 @@ object EvaluateASM {
     val nsmax = args(1).toInt
     val kmax = args(2).toInt
 
-    val w = for(k <- 1 to kmax; ns <- 2 to nsmax) yield (ns,k)
+    /*val w = for(k <- 1 to kmax; ns <- k+1 to nsmax) yield (ns,k)
     val writer = CSVWriter.open(new File("data/results.csv"))
+    var net_error = Seq[Double]()
 
     w.foreach((windows) => {
-      val net_error = EvaluateASM.atKernelBandwidth(windows._1,
+      net_error = EvaluateASM.atKernelBandwidth(windows._1,
         windows._2, levels).toArray.toSeq
       writer.writeRow(Seq(windows._2, windows._1) ++ net_error)
     })
 
-    writer.close()
+    writer.close()*/
+    val net_error = EvaluateASM.atKernelBandwidth(nsmax,
+      kmax, levels).toArray.toSeq
   }
 
   def readLandmarks(file: String): DenseVector[Double] = {
@@ -126,10 +131,44 @@ object EvaluateASM {
       val models = landmarksByTooth.map(i => ActiveShapeModel(i, imagesByLevels, k))
       val meanshape = models.head.alignShapes
       //Evaluate for fold.
-
+      val imageTest = ActiveShapeModel.getImage(0, test_images(0))._2
       val result = DenseVector.tabulate[Double](8)((tooth) => {
+        val toothModel = models(tooth)
         println("\nPerforming Multi-Resolution search for tooth: "+(tooth+1)+"\n")
-        models(tooth).MultiResolutionSearch(test_images, ns, 40, test_landmarks(tooth))._2
+        val res = toothModel.MultiResolutionSearch(test_images,
+          ns, 40, test_landmarks(tooth))
+        val toothLandmarks = res._3
+        //calculate the edges of the smallest rectangle
+        //containing all landmarks
+        //[xmin, xmax] x [ymin, ymax]
+        val points = ActiveShapeModel.landmarksAsPoints(toothLandmarks)
+        val (xmin, xmax) = (points.map(_._1).min, points.map(_._1).max)
+        val (ymin, ymax) = (points.map(_._2).min, points.map(_._2).max)
+        println("XMin: "+xmin+" XMax "+xmax)
+        println("YMin: "+ymin+" YMax "+ymax)
+        //Output the segmentation result for each tooth
+        //create a file (0)fold-tooth.jpg using map
+        //operation on (0)fold.tif
+        val toothSegment = imageTest.map((x, y, pixel) => {
+          if(x <= xmax && y <= ymax && x >= xmin && y >= ymin) {
+            //If the winding number is close to one it must be painted gray
+            //else painted black
+            val wn = toothModel.windingNumber(DenseVector(x.toDouble, y.toDouble),
+              points)
+            //println("Winding Number "+wn)
+            if(wn >= 0.9*2.0*math.Pi) {
+              PixelTools.rgb(112,112,112)
+            } else {
+              pixel
+            }
+
+          } else {
+            pixel
+          }
+        })
+        val fileName = if(fold < 10) "0"+fold+"-"+tooth+".png" else fold+"-"+tooth+".png"
+        toothSegment.write("data/Results/"+fileName, PNG)
+        res._2
       })
 
       val p: DenseVector[Double] = result * 100.0

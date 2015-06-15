@@ -3,3 +3,5 @@ target/
 *.sc
 data/Radiographs/processed
 data/results.csv
+data/Results/*.png
+!data/Results
